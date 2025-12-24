@@ -1,0 +1,130 @@
+<div class="pioneers-page">
+    <!-- HERO SECTION -->
+    <section class="hero-pioneers">
+        <div class="hero-content fade-in-up">
+            <span class="badge-hero">Proyecto Inclusivo</span>
+            <h1>SP Basket <span class="text-gradient">PIONEERS</span></h1>
+            <p class="hero-subtitle">Más que un equipo, somos una familia. Baloncesto sin barreras.</p>
+            <div class="hero-actions">
+                <a href="#historia" class="btn-primary">Conoce el Proyecto</a>
+                <a href="https://www.instagram.com/spbasketpioneers/" target="_blank" class="btn-outline">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                    Síguenos en Instagram
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- MANIFIESTO / HISTORIA -->
+    <section id="historia" class="section-manifesto">
+        <div class="container ">
+            <div class="manifesto-grid">
+                <div class="manifesto-text fade-in-left">
+                    <h2>Rompiendo <span class="highlight">Barreras</span></h2>
+                    <p>El proyecto <strong>Pioneers</strong> nace del corazón de SP Basket con una misión clara:
+                        demostrar que el baloncesto es un lenguaje universal.</p>
+                    <p>Somos un equipo de baloncesto inclusivo formado por jugadores extraordinarios. Aquí no importan
+                        las etiquetas, solo la pasión por el juego, el compañerismo y las ganas de superarse cada día.
+                    </p>
+                    <ul class="values-list">
+                        <li>
+                            <span class="icon">🏀</span>
+                            <div>
+                                <strong>Deporte para Todos</strong>
+                                <p>Fomentamos la actividad física y el desarrollo personal a través del basket.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="icon">🤝</span>
+                            <div>
+                                <strong>Inclusión Real</strong>
+                                <p>Creamos un espacio seguro donde cada jugador es valorado por lo que es.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="icon">❤️</span>
+                            <div>
+                                <strong>Familia Pioneers</strong>
+                                <p>Más allá de la cancha, construimos lazos de amistad y apoyo mutuo.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Usamos un div con imagen segura por CSS -->
+                <div class="manifesto-image fade-in-right">
+                    <div class="pioneers-team-photo"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PLANTILLA (CROMOS) -->
+    <section class="section-roster">
+        <div class="container">
+            <div class="section-header">
+                <h2>Nuestros <span class="text-gradient">Protagonistas</span></h2>
+                <p>Conoce a los jugadores que hacen posible este sueño</p>
+            </div>
+
+            <div class="cards-grid">
+                <!-- CROMO JUGADOR 1 -->
+                <div class="card-container" *ngFor="let jugador of jugadores">
+                    <div class="player-card">
+                        <!-- FRENTE: FULL PHOTO DESIGN -->
+                        <div class="card-front">
+                            <div class="card-number">{{ jugador.numero }}</div>
+
+                            <div class="card-photo">
+                                <!-- Usamos IMG tag explícita que es más robusta -->
+                                <img [src]="jugador.foto" [alt]="jugador.nombre" class="photo-img" loading="eager"
+                                    onerror="this.src='/assets/images/team-sp-negro.jpg'">
+                            </div>
+
+                            <div class="card-overlay">
+                                <div class="card-logo">PIONEERS</div>
+                                <div class="card-info">
+                                    <h3>{{ jugador.nombre }}</h3>
+                                    <span class="position">{{ jugador.posicion }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REVERSO -->
+                        <div class="card-back">
+                            <div class="back-bio">
+                                <h3>{{ jugador.nombre }}</h3>
+                                <div class="bio-content">
+                                    <p>"{{ jugador.lema }}"</p>
+                                </div>
+                                <div class="stats-pioneers">
+                                    <div class="stat">
+                                        <span class="label">Pasión</span>
+                                        <span class="value">100%</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="label">Compañerismo</span>
+                                        <span class="value">MAX</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LLAMADA A LA ACCIÓN -->
+    <section class="join-us">
+        <div class="container">
+            <h2>¿Quieres formar parte?</h2>
+            <p>Si quieres unirte a los Pioneers o colaborar con el proyecto, contáctanos.</p>
+            <a href="/contacto" class="btn-primary">Contactar Ahora</a>
+        </div>
+    </section>
+</div>

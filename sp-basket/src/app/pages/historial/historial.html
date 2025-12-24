@@ -1,0 +1,119 @@
+<div class="historial-page fade-in">
+    <div class="container">
+        <div class="header-historial">
+            <button (click)="volverPerfil()" class="btn-back">← Volver al Perfil</button>
+            <h1>Mis Gestiones y Pagos</h1>
+        </div>
+
+        <div *ngIf="loading" class="spinner-container">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- HISTORIAL DE COMPRAS (NUEVO) -->
+        <div class="historial-card">
+            <div class="card-header-h" style="background: #2c3e50;"> <!-- Azul oscuro para diferenciar -->
+                <h2>💳 Historial de Compras</h2>
+            </div>
+            <div class="card-body-h">
+                <div *ngIf="historialPagos.length === 0 && !loading" class="empty-state">
+                    No has realizado compras registradas todavía.
+                </div>
+                <table class="table-custom" *ngIf="historialPagos.length > 0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Importe</th>
+                            <th>Factura</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of historialPagos">
+                            <td>{{ p.fecha | date:'dd MMM yyyy - HH:mm' }}</td>
+                            <td style="font-weight: 500; color: #444;">{{ p.concepto }}</td>
+                            <td style="font-weight: bold; color: #333;">{{ p.monto | currency:'EUR' }}</td>
+                            <td>
+                                <button (click)="descargarFacturaGenerica(p)" class="btn-invoice">
+                                    📥 Descargar PDF
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RECONOCIMIENTOS -->
+        <div class="historial-card mt-4">
+            <div class="card-header-h">
+                <h2>🩺 Reconocimientos Médicos</h2>
+            </div>
+            <div class="card-body-h">
+                <div *ngIf="historialReconocimientos.length === 0 && !loading" class="empty-state">
+                    No tienes reconocimientos subidos.
+                </div>
+                <table class="table-custom" *ngIf="historialReconocimientos.length > 0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Mensaje Admin</th>
+                            <th>Archivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of historialReconocimientos">
+                            <td>{{ item.fecha_subida | date:'dd MMM yyyy' }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="item.estado">{{ item.estado | uppercase }}</span>
+                            </td>
+                            <td>{{ item.mensaje_admin || '---' }}</td>
+                            <td>
+                                <a [href]="item.archivo_url" target="_blank" class="btn-link">📄 Ver PDF</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAPELETAS (Detalle proceso) -->
+        <div class="historial-card mt-4">
+            <div class="card-header-h">
+                <h2>🎟️ Estado Lotería Navidad</h2>
+            </div>
+            <div class="card-body-h">
+                <div *ngIf="historialPapeletas.length === 0 && !loading" class="empty-state">
+                    No hay registros de papeletas.
+                </div>
+                <table class="table-custom" *ngIf="historialPapeletas.length > 0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Estado Validación</th>
+                            <th>Estado Pago</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of historialPapeletas">
+                            <td>{{ item.fecha_subida | date:'dd MMM yyyy' }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="item.estado">{{ item.estado | uppercase }}</span>
+                            </td>
+                            <td>
+                                <span *ngIf="item.pagado" class="status-pagado">✅ PAGADO</span>
+                                <span *ngIf="!item.pagado" class="status-pendiente">⏳ PENDIENTE</span>
+                            </td>
+                            <td>
+                                <button *ngIf="item.pagado" (click)="descargarFactura(item)" class="btn-invoice">
+                                    🖨️ Factura Lotería
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,186 @@
+[
+  {
+    "id": "00",
+    "nombre": "CONTINUAMOS",
+    "numero": "00",
+    "posicion": "Jugador/a",
+    "lema": "CON… 🐧🩷Natural y auténtica, siempre aporta al equipo con su manera tranquila de es",
+    "foto": "/assets/pioneers_clean/pioneer-00-continuamos.jpg"
+  },
+  {
+    "id": "1",
+    "nombre": "Lis",
+    "numero": "1",
+    "posicion": "Jugador/a",
+    "lema": "donde pone el ojo… ¡pone el balón! Precisión, talento y buena actitud",
+    "foto": "/assets/pioneers_clean/pioneer-1-lis.jpg"
+  },
+  {
+    "id": "2",
+    "nombre": "Miguel",
+    "numero": "2",
+    "posicion": "Jugador/a",
+    "lema": "alegre, apasionado y siempre dando el 1",
+    "foto": "/assets/pioneers_clean/pioneer-2-miguel.jpg"
+  },
+  {
+    "id": "3",
+    "nombre": "Le",
+    "numero": "3",
+    "posicion": "Jugador/a",
+    "lema": "cuesta dar el primer paso, pero cuando entra en juego, se nota. Su prese",
+    "foto": "/assets/pioneers_clean/pioneer-3-le.jpg"
+  },
+  {
+    "id": "4",
+    "nombre": "Antonio",
+    "numero": "4",
+    "posicion": "Jugador/a",
+    "lema": "risueño y alegre. Su ",
+    "foto": "/assets/pioneers_clean/pioneer-4-antonio.jpg"
+  },
+  {
+    "id": "5",
+    "nombre": "mejora",
+    "numero": "5",
+    "posicion": "Jugador/a",
+    "lema": "en cada partido y no deja de crecer. Un gran jug",
+    "foto": "/assets/pioneers_clean/pioneer-5-mejora.jpg"
+  },
+  {
+    "id": "6",
+    "nombre": "Daniel",
+    "numero": "6",
+    "posicion": "Jugador/a",
+    "lema": "nuestro jugador más joven. Cada día crece y brilla junto a esta gra",
+    "foto": "/assets/pioneers_clean/pioneer-6-daniel.jpg"
+  },
+  {
+    "id": "7",
+    "nombre": "Tenemos",
+    "numero": "7",
+    "posicion": "Jugador/a",
+    "lema": "a Gabi. Ejemplo de esfuerzo y constancia, siempre con energía, ale",
+    "foto": "/assets/pioneers_clean/pioneer-7-tenemos.jpg"
+  },
+  {
+    "id": "8",
+    "nombre": "Pablo",
+    "numero": "8",
+    "posicion": "Jugador/a",
+    "lema": "Con paso firme y a su propio ritmo, s",
+    "foto": "/assets/pioneers_clean/pioneer-8-pablo.jpg"
+  },
+  {
+    "id": "9",
+    "nombre": "Siempre",
+    "numero": "9",
+    "posicion": "Jugador/a",
+    "lema": "en movimiento y con ocurrencias que animan al equ",
+    "foto": "/assets/pioneers_clean/pioneer-9-siempre.jpg"
+  },
+  {
+    "id": "10",
+    "nombre": "Hugo",
+    "numero": "10",
+    "posicion": "Jugador/a",
+    "lema": "pieza clave dentro y fuera de la cancha. Su entrega y gran corazón lo h",
+    "foto": "/assets/pioneers_clean/pioneer-10-hugo.jpg"
+  },
+  {
+    "id": "11",
+    "nombre": "David",
+    "numero": "11",
+    "posicion": "Jugador/a",
+    "lema": "sigue creciendo y aprendiendo en cada paso. Un jugador con ganas, actitud ",
+    "foto": "/assets/pioneers_clean/pioneer-11-david.jpg"
+  },
+  {
+    "id": "12",
+    "nombre": "ejemplo",
+    "numero": "12",
+    "posicion": "Jugador/a",
+    "lema": "de superación y constan",
+    "foto": "/assets/pioneers_clean/pioneer-12-ejemplo.jpg"
+  },
+  {
+    "id": "14",
+    "nombre": "Javi",
+    "numero": "14",
+    "posicion": "Jugador/a",
+    "lema": "siempre con buena actitud y ganas de dar l",
+    "foto": "/assets/pioneers_clean/pioneer-14-javi.jpg"
+  },
+  {
+    "id": "15",
+    "nombre": "Elenita",
+    "numero": "15",
+    "posicion": "Jugador/a",
+    "lema": "está lista para brillar! ✨Pequeña pero matona, siempre c",
+    "foto": "/assets/pioneers_clean/pioneer-15-elenita.jpg"
+  },
+  {
+    "id": "16",
+    "nombre": "Laura",
+    "numero": "16",
+    "posicion": "Jugador/a",
+    "lema": "Pura entrega en cada jugada 💥Trabajadora, guerrera y con un corazón",
+    "foto": "/assets/pioneers_clean/pioneer-16-laura.jpg"
+  },
+  {
+    "id": "17",
+    "nombre": "Atenta",
+    "numero": "17",
+    "posicion": "Jugador/a",
+    "lema": "compañera y siempre dispuesta a ayudar. Co",
+    "foto": "/assets/pioneers_clean/pioneer-17-atenta.jpg"
+  },
+  {
+    "id": "18",
+    "nombre": "Paula",
+    "numero": "18",
+    "posicion": "Jugador/a",
+    "lema": "un torbellino de energía en la cancha. Corre, sonríe y contagia su ",
+    "foto": "/assets/pioneers_clean/pioneer-18-paula.jpg"
+  },
+  {
+    "id": "18",
+    "nombre": "Alberto",
+    "numero": "18",
+    "posicion": "Jugador/a",
+    "lema": "Alegre y con mucha energía, siempre con una s",
+    "foto": "/assets/pioneers_clean/pioneer-18-alberto.jpg"
+  },
+  {
+    "id": "20",
+    "nombre": "nuestro",
+    "numero": "20",
+    "posicion": "Jugador/a",
+    "lema": "capitán. Talento, potencia y compañerismo en cada",
+    "foto": "/assets/pioneers_clean/pioneer-20-nuestro.jpg"
+  },
+  {
+    "id": "23",
+    "nombre": "buen",
+    "numero": "23",
+    "posicion": "Jugador/a",
+    "lema": "jugador y compañero de primera. Cada entrenamient",
+    "foto": "/assets/pioneers_clean/pioneer-23-buen.jpg"
+  },
+  {
+    "id": "29",
+    "nombre": "Mónica",
+    "numero": "29",
+    "posicion": "Jugador/a",
+    "lema": "aprendiendo a su ritmo, siempre firme y con carácter.As",
+    "foto": "/assets/pioneers_clean/pioneer-29-mnica.jpg"
+  },
+  {
+    "id": "30",
+    "nombre": "Manu",
+    "numero": "30",
+    "posicion": "Jugador/a",
+    "lema": "siempre con una sonrisa y aprendiendo sin parar. Buena energía ",
+    "foto": "/assets/pioneers_clean/pioneer-30-manu.jpg"
+  }
+]

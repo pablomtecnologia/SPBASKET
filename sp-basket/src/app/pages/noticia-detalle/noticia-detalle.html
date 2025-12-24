@@ -1,0 +1,103 @@
+<div class="noticia-detalle-page">
+    <!-- Header -->
+    <section class="detalle-header">
+        <div class="container">
+            <button class="btn-volver" (click)="volverANoticias()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver a Noticias
+            </button>
+        </div>
+    </section>
+
+    <!-- Loading -->
+    <div class="loading" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Cargando noticia...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-container" *ngIf="errorMessage">
+        <div class="container">
+            <div class="alert alert-error">{{ errorMessage }}</div>
+            <button class="btn-primary" (click)="volverANoticias()">Volver a Noticias</button>
+        </div>
+    </div>
+
+    <!-- Contenido de la noticia -->
+    <article class="noticia-content" *ngIf="noticia && !loading">
+        <div class="container-article">
+
+            <!-- Imagen destacada -->
+            <div class="noticia-imagen-hero" *ngIf="noticia.imagen_url">
+                <img [src]="noticia.imagen_url" [alt]="noticia.titulo">
+                <div class="imagen-overlay">
+                    <span class="badge-categoria">{{ noticia.categoria || 'General' }}</span>
+                    <span class="badge-destacada" *ngIf="noticia.destacada">⭐ Destacada</span>
+                </div>
+            </div>
+
+            <!-- Meta información -->
+            <div class="noticia-meta">
+                <span class="meta-fecha">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    {{ formatDate(noticia.fecha_creacion) }}
+                </span>
+                <span class="meta-autor" *ngIf="noticia.autor">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Por {{ noticia.autor }}
+                </span>
+            </div>
+
+            <!-- Título -->
+            <h1 class="noticia-titulo">{{ noticia.titulo }}</h1>
+
+            <!-- Hashtags -->
+            <div class="noticia-hashtags" *ngIf="noticia.hashtags">
+                <span class="hashtag" *ngFor="let tag of parseHashtags(noticia.hashtags)">{{ tag }}</span>
+            </div>
+
+            <!-- Contenido principal -->
+            <div class="noticia-texto">
+                <p>{{ noticia.contenido }}</p>
+            </div>
+
+            <!-- Enlace externo -->
+            <div class="enlace-externo" *ngIf="noticia.enlace">
+                <a [href]="noticia.enlace" target="_blank" class="btn-enlace-externo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    Ver artículo completo
+                </a>
+            </div>
+
+            <!-- Botón volver -->
+            <div class="action-footer">
+                <button class="btn-volver-footer" (click)="volverANoticias()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Volver a Noticias
+                </button>
+            </div>
+
+        </div>
+    </article>
+</div>

@@ -1,0 +1,186 @@
+<div class="noticias-page">
+    <section class="page-header">
+        <div class="container">
+            <h1 class="fade-in">Noticias</h1>
+            <p class="fade-in">Últimas novedades de SP Basket</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="actions-bar" *ngIf="authService.isAdmin()">
+                <button class="btn-create-news" (click)="openModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear Nueva Noticia
+                </button>
+            </div>
+
+            <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+            <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+            <div class="loading" *ngIf="loading">
+                <div class="spinner"></div>
+                <p>Cargando noticias...</p>
+            </div>
+
+            <div class="news-grid" *ngIf="!loading">
+                <article class="news-card" *ngFor="let noticia of noticias" [class.destacada]="noticia.destacada">
+                    <div class="news-image" *ngIf="noticia.imagen_url">
+                        <img [src]="noticia.imagen_url" [alt]="noticia.titulo" loading="lazy">
+                        <span class="badge-destacada" *ngIf="noticia.destacada">Destacada</span>
+                        <span class="badge-categoria">{{ noticia.categoria || 'General' }}</span>
+                    </div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-date">{{ formatDate(noticia.fecha_creacion) }}</span>
+                            <span class="news-author" *ngIf="noticia.autor">Por {{ noticia.autor }}</span>
+                        </div>
+                        <h3>{{ noticia.titulo }}</h3>
+                        <p class="news-excerpt">{{ noticia.contenido }}</p>
+                        <div class="news-hashtags" *ngIf="noticia.hashtags">
+                            <span class="hashtag" *ngFor="let tag of parseHashtags(noticia.hashtags)">{{ tag }}</span>
+                        </div>
+                        <div class="news-footer">
+                            <button class="btn-read-more" (click)="verDetalle(noticia.id)">Leer más</button>
+                            <a *ngIf="noticia.enlace" [href]="noticia.enlace" target="_blank" class="btn-external-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                            <button *ngIf="authService.isAdmin()" class="btn-delete"
+                                (click)="eliminarNoticia(noticia.id)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                    </path>
+                                </svg>
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="no-news" *ngIf="!loading && noticias.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <h3>No hay noticias</h3>
+                <p>Aún no se han publicado noticias</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL SUPER SIMPLE -->
+    <div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+
+            <div class="modal-top">
+                <h2>📰 Nueva Noticia</h2>
+                <button class="close-btn" (click)="closeModal()">×</button>
+            </div>
+
+            <div class="alert alert-success" *ngIf="successMessage">✔️ {{ successMessage }}</div>
+            <div class="alert alert-error" *ngIf="errorMessage">❌ {{ errorMessage }}</div>
+
+            <form class="simple-form" (ngSubmit)="crearNoticia()">
+
+                <!-- Título -->
+                <div class="input-group">
+                    <label>Título de la Noticia *</label>
+                    <input type="text" [(ngModel)]="nuevaNoticia.titulo" name="titulo"
+                        placeholder="Ej: Victoria del SP Rosa" required>
+                </div>
+
+                <!-- Categoría y Destacada -->
+                <div class="two-cols">
+                    <div class="input-group">
+                        <label>Categoría</label>
+                        <select [(ngModel)]="nuevaNoticia.categoria" name="categoria">
+                            <option value="General">General</option>
+                            <option value="Competición">Competición</option>
+                            <option value="Entrenamiento">Entrenamiento</option>
+                            <option value="Fichajes">Fichajes</option>
+                            <option value="Campus">Campus</option>
+                            <option value="Eventos">Eventos</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Destacar esta noticia</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" [(ngModel)]="nuevaNoticia.destacada" name="destacada">
+                            <span>Sí, destacar</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Contenido -->
+                <div class="input-group">
+                    <label>Contenido de la Noticia *</label>
+                    <textarea [(ngModel)]="nuevaNoticia.contenido" name="contenido"
+                        placeholder="Escribe aquí el contenido completo de la noticia..." rows="8" required></textarea>
+                </div>
+
+                <!-- Imagen - SUBIR ARCHIVO -->
+                <div class="input-group">
+                    <label>🖼️ Imagen de la Noticia (JPG, PNG, GIF, WEBP, PDF)</label>
+                    <div class="upload-zone">
+                        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*,.pdf" hidden>
+                        <button type="button" class="btn-upload" (click)="fileInput.click()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            {{ selectedFileName || 'Seleccionar archivo' }}
+                        </button>
+                        <small *ngIf="uploadProgress > 0 && uploadProgress < 100" class="uploading">⬆️ Subiendo: {{
+                            uploadProgress }}%</small>
+                        <small *ngIf="nuevaNoticia.imagen_url" class="success">✅ Imagen subida correctamente</small>
+                    </div>
+                    <img *ngIf="nuevaNoticia.imagen_url" [src]="nuevaNoticia.imagen_url" class="preview-img"
+                        alt="Preview">
+                </div>
+
+                <!-- Hashtags -->
+                <div class="input-group">
+                    <label>Hashtags (presiona Enter o Espacio para añadir)</label>
+                    <div class="tags-zone">
+                        <span class="tag" *ngFor="let tag of hashtagsList">
+                            #{{ tag }}
+                            <button type="button" (click)="removeHashtag(tag)">×</button>
+                        </span>
+                        <input type="text" [(ngModel)]="hashtagInput" name="hashtagInput"
+                            (keypress)="onHashtagKeyPress($event)" placeholder="Añadir hashtag">
+                    </div>
+                </div>
+
+                <!-- Enlace -->
+                <div class="input-group">
+                    <label>Enlace Externo (opcional)</label>
+                    <input type="url" [(ngModel)]="nuevaNoticia.enlace" name="enlace" placeholder="https://ejemplo.com">
+                </div>
+
+                <!-- Botones -->
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-submit">Publicar Noticia</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,315 @@
+.equipo-detalle-page {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.back-button {
+    background: var(--white);
+    color: var(--primary-pink);
+    border: 2px solid var(--primary-pink);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    margin-bottom: var(--spacing-md);
+    font-size: 1rem;
+}
+
+.back-button:hover {
+    background: var(--primary-pink);
+    color: var(--white);
+    transform: translateX(-4px);
+}
+
+.section-title {
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Coaching Staff */
+.coaching-section {
+    background: var(--light-bg);
+}
+
+.coaches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.coach-card {
+    perspective: 1000px;
+    height: 400px;
+}
+
+.card-flip {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+}
+
+.coach-card:hover .card-flip,
+.player-card:hover .card-flip {
+    transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+}
+
+.card-front {
+    background: linear-gradient(135deg, var(--white) 0%, var(--light-bg) 100%);
+    border: 3px solid var(--primary-pink);
+}
+
+.card-back {
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-pink-dark) 100%);
+    color: var(--white);
+    transform: rotateY(180deg);
+}
+
+.coach-image {
+    width: 150px;
+    height: 150px;
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-pink-dark) 100%);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-pink);
+}
+
+.coach-icon {
+    font-size: 5rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.coach-card h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: var(--spacing-xs);
+    text-align: center;
+}
+
+.card-front h3 {
+    color: var(--primary-pink);
+}
+
+.coach-role {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: var(--spacing-sm);
+}
+
+.card-back .coach-role {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.coach-info {
+    margin-top: var(--spacing-md);
+    text-align: left;
+    width: 100%;
+}
+
+.coach-info p {
+    margin-bottom: var(--spacing-sm);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Players */
+.players-section {
+    background: var(--white);
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.player-card {
+    perspective: 1000px;
+    height: 350px;
+}
+
+.player-number {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+    background: var(--primary-pink);
+    color: var(--white);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    box-shadow: var(--shadow-md);
+}
+
+.player-number-back {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+    background: var(--white);
+    color: var(--primary-pink);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    box-shadow: var(--shadow-md);
+}
+
+.player-image {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-pink-dark) 100%);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-pink);
+}
+
+.player-icon {
+    font-size: 4rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.player-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+    text-align: center;
+}
+
+.card-front .player-position {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.player-stats {
+    margin-top: var(--spacing-md);
+    width: 100%;
+}
+
+.player-stats .stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+}
+
+.player-stats .stat-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.player-stats .stat-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+/* Error Page */
+.error-page {
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 2rem;
+    }
+
+    .coaches-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .players-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: var(--spacing-md);
+    }
+
+    .player-card,
+    .coach-card {
+        height: 320px;
+    }
+
+    .player-image,
+    .coach-image {
+        width: 100px;
+        height: 100px;
+    }
+
+    .player-icon {
+        font-size: 3rem;
+    }
+
+    .coach-icon {
+        font-size: 4rem;
+    }
+}
+
+/* Animation on page load */
+.player-card,
+.coach-card {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.player-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.player-card:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.player-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.player-card:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.player-card:nth-child(5) {
+    animation-delay: 0.3s;
+}
+
+.player-card:nth-child(6) {
+    animation-delay: 0.35s;
+}

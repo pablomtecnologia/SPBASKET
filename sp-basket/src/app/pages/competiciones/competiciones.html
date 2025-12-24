@@ -1,0 +1,48 @@
+<div class="competiciones-page">
+    <section class="page-header">
+        <div class="container">
+            <h1 class="fade-in">Competiciones</h1>
+            <p class="fade-in">Consulta los calendarios y resultados de nuestros equipos</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="competitions-grid">
+                <div class="competition-card clickable" *ngFor="let comp of competitions"
+                    (click)="navigateToCompetition(comp.id)">
+                    <div class="competition-header" [style.background-image]="'url(' + comp.image + ')'">
+                        <h3>{{ comp.name }}</h3>
+                    </div>
+                    <div class="competition-body">
+                        <div class="next-match" *ngIf="comp.nextMatch">
+                            <h4>Próximo Partido</h4>
+                            <div class="match-details">
+                                <p class="match-teams">{{ comp.nextMatch.teams }}</p>
+                                <p class="match-date">{{ comp.nextMatch.date }}</p>
+                                <p class="match-location">{{ comp.nextMatch.location }}</p>
+                            </div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <span class="stat-label">Partidos</span>
+                                <span class="stat-value">{{ comp.matches }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Victorias</span>
+                                <span class="stat-value">{{ comp.wins }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Derrotas</span>
+                                <span class="stat-value">{{ comp.losses }}</span>
+                            </div>
+                        </div>
+                        <div class="view-details">
+                            <span>Ver todos los partidos →</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,224 @@
+.contacto-page {
+    width: 100%;
+    min-height: 100vh;
+    background-image: url('../../../assets/images/contacto-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+}
+
+.contacto-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.4);
+    z-index: 0;
+}
+
+.page-header {
+    padding: var(--spacing-xxl) 0;
+    text-align: center;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-bottom: var(--spacing-xl);
+}
+
+.page-header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: var(--spacing-sm);
+    color: var(--primary-pink);
+}
+
+.page-header p {
+    font-size: 1.2rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.contact-layout,
+.map-section {
+    position: relative;
+    z-index: 1;
+}
+
+.contact-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.contact-form-wrapper,
+.contact-info-wrapper {
+    background: var(--white);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.contact-form-wrapper h2,
+.contact-info-wrapper h2 {
+    color: var(--primary-pink);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.75rem;
+}
+
+.contact-form .btn {
+    width: 100%;
+    margin-top: var(--spacing-sm);
+}
+
+.success-message {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: #4CAF50;
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-weight: 600;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Contact Info */
+.info-item {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-item:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.info-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-pink-dark) 100%);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-pink);
+}
+
+.info-icon svg {
+    width: 30px;
+    height: 30px;
+}
+
+.info-content h4 {
+    color: var(--primary-pink);
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 700;
+}
+
+.info-content p {
+    color: var(--text-dark);
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* Social Links */
+.social-links {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 2px solid var(--border-color);
+}
+
+.social-links h3 {
+    color: var(--primary-pink);
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-md);
+    font-weight: 700;
+}
+
+.social-icons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.social-icons a {
+    width: 50px;
+    height: 50px;
+    background: var(--light-bg);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-pink);
+    transition: all var(--transition-normal);
+}
+
+.social-icons a svg {
+    width: 24px;
+    height: 24px;
+}
+
+.social-icons a:hover {
+    background: var(--primary-pink);
+    color: var(--white);
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: var(--shadow-pink);
+}
+
+/* Map Section */
+.map-section {
+    margin-top: var(--spacing-xl);
+}
+
+.map-section h2 {
+    color: var(--primary-pink);
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+    font-size: 2rem;
+}
+
+.map-container {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.map-container iframe {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .contact-layout {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 768px) {
+
+    .contact-form-wrapper,
+    .contact-info-wrapper {
+        padding: var(--spacing-md);
+    }
+
+    .info-item {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+}

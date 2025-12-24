@@ -1,0 +1,107 @@
+<div class="equipo-detalle-page" *ngIf="team">
+    <section class="page-header">
+        <div class="container">
+            <button class="back-button" (click)="goBack()">
+                ← Volver a Equipos
+            </button>
+            <h1 class="fade-in">{{ team.name }}</h1>
+            <p class="fade-in">{{ team.category }}</p>
+        </div>
+    </section>
+
+    <!-- Coaching Staff -->
+    <section class="section coaching-section">
+        <div class="container">
+            <h2 class="section-title text-center text-pink">Cuerpo Técnico</h2>
+            <div class="coaches-grid">
+                <div class="coach-card">
+                    <div class="card-flip">
+                        <div class="card-front">
+                            <div class="coach-image">
+                                <div class="coach-icon">👨‍🏫</div>
+                            </div>
+                            <h3>{{ team.coach }}</h3>
+                            <p class="coach-role">Entrenador Principal</p>
+                        </div>
+                        <div class="card-back">
+                            <h3>{{ team.coach }}</h3>
+                            <p class="coach-role">Entrenador Principal</p>
+                            <div class="coach-info">
+                                <p>🏆 Experiencia: 10 años</p>
+                                <p>📚 Licencia: Nivel III</p>
+                                <p>⭐ Especialidad: Táctica defensiva</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="coach-card">
+                    <div class="card-flip">
+                        <div class="card-front">
+                            <div class="coach-image">
+                                <div class="coach-icon">👨‍🏫</div>
+                            </div>
+                            <h3>{{ team.assistantCoach }}</h3>
+                            <p class="coach-role">Entrenador Asistente</p>
+                        </div>
+                        <div class="card-back">
+                            <h3>{{ team.assistantCoach }}</h3>
+                            <p class="coach-role">Entrenador Asistente</p>
+                            <div class="coach-info">
+                                <p>🏆 Experiencia: 7 años</p>
+                                <p>📚 Licencia: Nivel II</p>
+                                <p>⭐ Especialidad: Preparación física</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Players -->
+    <section class="section players-section">
+        <div class="container">
+            <h2 class="section-title text-center text-pink">Plantilla</h2>
+            <div class="players-grid">
+                <div class="player-card" *ngFor="let player of team.players">
+                    <div class="card-flip">
+                        <div class="card-front">
+                            <div class="player-number">{{ player.number }}</div>
+                            <div class="player-image">
+                                <div class="player-icon">🏀</div>
+                            </div>
+                            <h3>{{ player.name }}</h3>
+                            <p class="player-position">{{ player.position }}</p>
+                        </div>
+                        <div class="card-back">
+                            <div class="player-number-back">{{ player.number }}</div>
+                            <h3>{{ player.name }}</h3>
+                            <div class="player-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Posición</span>
+                                    <span class="stat-value">{{ player.position }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Altura</span>
+                                    <span class="stat-value">{{ player.height }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Edad</span>
+                                    <span class="stat-value">{{ player.age }} años</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="error-page" *ngIf="!team">
+    <div class="container text-center">
+        <h1>Equipo no encontrado</h1>
+        <button class="btn btn-primary" (click)="goBack()">Volver a Equipos</button>
+    </div>
+</div>

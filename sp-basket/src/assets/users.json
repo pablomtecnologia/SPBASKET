@@ -1,0 +1,5 @@
+[
+  { "username": "admin", "password": "spbasket2024", "email": "admin@spbasket.com" },
+  { "username": "jugador", "password": "jugador123", "email": "jugador@spbasket.com" },
+  { "username": "entrenador", "password": "entrenador123", "email": "entrenador@spbasket.com" }
+]

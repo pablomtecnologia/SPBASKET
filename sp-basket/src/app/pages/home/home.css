@@ -1,0 +1,384 @@
+.home-page {
+    width: 100%;
+}
+
+/* Hero Section con fondo fijo */
+/* Hero Section con fondo fijo */
+.hero-section {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    right: 0;
+    height: 100vh;
+    background-image: url('../../../assets/images/hero-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 0;
+}
+
+/* ... (resto del css) ... */
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.5) 50%,
+            rgba(0, 0, 0, 0.7) 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: var(--white);
+    animation: fadeIn 1s ease-out;
+}
+
+.hero-logo {
+    margin-bottom: var(--spacing-lg);
+}
+
+.hero-logo-img {
+    height: 150px;
+    width: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.hero-title {
+    font-size: 5rem;
+    font-weight: 900;
+    margin-bottom: var(--spacing-sm);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, var(--white) 0%, var(--primary-pink-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Contenido scrolleable */
+.scrollable-content {
+    position: relative;
+    z-index: 1;
+    margin-top: 100vh;
+    background: var(--white);
+}
+
+/* Sponsors Section */
+.sponsors-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: var(--spacing-xl) 0;
+    overflow: hidden;
+}
+
+.sponsors-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: var(--spacing-lg) 0;
+}
+
+.sponsors-track {
+    display: flex;
+    gap: var(--spacing-xl);
+    animation: scroll 40s linear infinite;
+}
+
+.sponsor-slide {
+    flex-shrink: 0;
+    width: 350px;
+    /* Mucho más grande: 350px */
+    height: 220px;
+    /* Mucho más grande: 220px */
+    background: var(--white);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.sponsor-slide a {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.sponsor-slide:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(235, 52, 137, 0.3);
+    border-color: var(--primary-pink);
+}
+
+.sponsor-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: grayscale(100%);
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.sponsor-slide:hover img {
+    filter: grayscale(0%);
+    transform: scale(1.1);
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        /* Actualizado para 8 patrocinadores en lugar de 12 */
+        transform: translateX(calc(-350px * 8 - var(--spacing-xl) * 8));
+    }
+}
+
+.sponsors-track:hover {
+    animation-play-state: paused;
+}
+
+/* Social CTA Section */
+.social-cta-section {
+    background: linear-gradient(135deg, var(--light-bg) 0%, var(--white) 100%);
+}
+
+.social-icons-large {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: var(--spacing-md);
+}
+
+.social-icon-large {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+    min-width: 120px;
+}
+
+.social-icon-large svg {
+    width: 48px;
+    height: 48px;
+    transition: transform var(--transition-normal);
+}
+
+.social-icon-large span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+
+.social-icon-large.twitch {
+    color: #9146FF;
+}
+
+.social-icon-large.instagram {
+    color: #E4405F;
+}
+
+.social-icon-large.facebook {
+    color: #1877F2;
+}
+
+.social-icon-large.tiktok {
+    color: #000000;
+}
+
+.social-icon-large:hover {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.social-icon-large:hover svg {
+    transform: scale(1.2);
+}
+
+/* Feature Cards */
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    text-align: center;
+    transition: all var(--transition-normal);
+    border: 2px solid transparent;
+    backdrop-filter: blur(10px);
+}
+
+.feature-card:hover {
+    background: rgba(230, 0, 126, 0.1);
+    border-color: var(--primary-pink);
+    transform: translateY(-8px);
+    box-shadow: 0 8px 32px rgba(230, 0, 126, 0.3);
+}
+
+.feature-icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-md);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.feature-card h4 {
+    color: var(--primary-pink);
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.25rem;
+}
+
+.feature-card p {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* CTA Section */
+.cta-section {
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-pink-dark) 100%);
+    color: var(--white);
+    padding: var(--spacing-xl) 0;
+}
+
+.cta-section h2 {
+    color: var(--white);
+    font-size: 2.5rem;
+}
+
+.cta-section p {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.cta-section .btn-primary {
+    background: var(--white);
+    color: var(--primary-pink);
+    font-size: 1.1rem;
+    padding: 1rem 2.5rem;
+}
+
+.cta-section .btn-primary:hover {
+    background: var(--light-bg);
+    transform: translateY(-4px) scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-section {
+        height: 70vh;
+    }
+
+    .hero-logo-img {
+        height: 100px;
+    }
+
+    .hero-title {
+        font-size: 3rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .scrollable-content {
+        margin-top: 70vh;
+    }
+
+    .sponsor-slide {
+        width: 400px;
+        /* MUCHO más grande en móvil: 400px (antes 280px) */
+        height: 250px;
+        /* MUCHO más grande en móvil: 250px (antes 180px) */
+        padding: var(--spacing-lg);
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            /* Actualizado para móvil con 8 patrocinadores */
+            transform: translateX(calc(-400px * 8 - var(--spacing-xl) * 8));
+        }
+    }
+
+    .social-icons-large {
+        gap: var(--spacing-sm);
+    }
+
+    .social-icon-large {
+        min-width: 100px;
+        padding: var(--spacing-sm);
+    }
+
+    .social-icon-large svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .feature-card {
+        padding: var(--spacing-md);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+    }
+
+    .cta-section h2 {
+        font-size: 2rem;
+    }
+
+    .cta-section p {
+        font-size: 1.1rem;
+    }
+}
+
+/* What We Offer Section Background */
+.section-dark {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url('../../../assets/images/media-day-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--white);
+    padding: var(--spacing-xl) 0;
+}

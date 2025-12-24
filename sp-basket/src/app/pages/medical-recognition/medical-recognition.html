@@ -1,0 +1,146 @@
+<div class="medical-page">
+    <section class="page-header">
+        <div class="container">
+            <h1>🏥 Reconocimiento Médico</h1>
+            <p>Sube tu reconocimiento médico y recibe validación del club</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container-medical">
+
+            <!-- Vista Admin Completa -->
+            <div class="admin-management-card" *ngIf="isAdmin">
+                <h2>👑 Gestión de Reconocimientos</h2>
+
+                <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+
+                <div class="empty-state-admin" *ngIf="pendientesAdmin.length === 0 && !loading">
+                    <div class="admin-icon-small">✨</div>
+                    <p>¡Todo al día! No hay reconocimientos pendientes de validar.</p>
+                </div>
+
+                <div class="admin-list" *ngIf="pendientesAdmin.length > 0">
+                    <div class="admin-item" *ngFor="let recon of pendientesAdmin">
+                        <div class="item-header">
+                            <span class="user-name">{{ recon.nombre }} {{ recon.apellido }}</span>
+                            <span class="item-date">{{ formatDate(recon.fecha_subida) }}</span>
+                        </div>
+                        <div class="item-details">
+                            <p><strong>Email:</strong> {{ recon.email }}</p>
+                            <p *ngIf="recon.licencia"><strong>Licencia:</strong> {{ recon.licencia }}</p>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-ver" (click)="verArchivo(recon.archivo_url)">
+                                📄 Ver PDF
+                            </button>
+                            <div class="action-buttons">
+                                <button class="btn-rechazar" (click)="procesarReconocimiento(recon.id, 'rechazar')">
+                                    ❌ Rechazar
+                                </button>
+                                <button class="btn-validar" (click)="procesarReconocimiento(recon.id, 'validar')">
+                                    ✅ Validar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Subida (Solo Usuarios) -->
+            <div class="upload-card" *ngIf="!isAdmin">
+                <h2>📤 Subir Reconocimiento</h2>
+
+                <div class="alert alert-info">
+                    <p>📋 Sube tu reconocimiento médico en formato PDF. El administrador lo revisará y recibirás una
+                        notificación por email.</p>
+                </div>
+
+                <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+                <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+                <form (ngSubmit)="enviarReconocimiento()" class="medical-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" [(ngModel)]="nombre" name="nombre" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Apellidos *</label>
+                            <input type="text" [(ngModel)]="apellido" name="apellido" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" [(ngModel)]="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Número de Licencia (opcional)</label>
+                        <input type="text" [(ngModel)]="licencia" name="licencia" placeholder="Ej: FEB123456">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Archivo PDF *</label>
+                        <div class="file-upload">
+                            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".pdf" hidden>
+                            <button type="button" class="btn-file" (click)="fileInput.click()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                {{ selectedFileName || 'Seleccionar archivo PDF' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" [disabled]="sending">
+                        <span *ngIf="!sending">Enviar Reconocimiento</span>
+                        <span *ngIf="sending">Enviando...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Mis Reconocimientos (Solo Usuarios) -->
+            <div class="history-card" *ngIf="!isAdmin">
+                <h2>📋 Mis Reconocimientos</h2>
+
+                <div class="loading" *ngIf="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando...</p>
+                </div>
+
+                <div class="reconocimientos-list" *ngIf="!loading">
+                    <div class="reconocimiento-item" *ngFor="let recon of misReconocimientos">
+                        <div class="recon-header">
+                            <span [class]="getEstadoClass(recon.estado)" class="estado-badge">
+                                {{ getEstadoTexto(recon.estado) }}
+                            </span>
+                            <span class="recon-fecha">{{ formatDate(recon.fecha_subida) }}</span>
+                        </div>
+
+                        <div class="recon-info">
+                            <p><strong>Nombre:</strong> {{ recon.nombre }} {{ recon.apellido }}</p>
+                            <p *ngIf="recon.licencia"><strong>Licencia:</strong> {{ recon.licencia }}</p>
+                            <p><strong>Archivo:</strong> <a [href]="recon.archivo_url" target="_blank">Ver PDF</a></p>
+                        </div>
+
+                        <div class="recon-mensaje" *ngIf="recon.mensaje_admin">
+                            <p><strong>💬 Mensaje del administrador:</strong></p>
+                            <p>{{ recon.mensaje_admin }}</p>
+                        </div>
+                    </div>
+
+                    <div class="no-data" *ngIf="misReconocimientos.length === 0">
+                        <p>No has enviado ningún reconocimiento médico todavía.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>

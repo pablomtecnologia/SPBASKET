@@ -1,0 +1,242 @@
+.pagos-page {
+    padding: 100px 0 60px;
+    background: var(--light-bg);
+    min-height: 100vh;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+}
+
+.payments-grid {
+    gap: 30px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 900px) {
+    .payments-grid {
+        grid-template-columns: repeat(1, 1fr);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+}
+
+.payment-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.payment-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-header-payment {
+    padding: 20px;
+    color: white;
+    text-align: center;
+}
+
+.bg-gradient-1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-2 {
+    background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+    color: #4a4a4a;
+}
+
+.bg-gradient-3 {
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-pink-dark) 100%);
+}
+
+.card-header-payment .icon {
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.card-header-payment h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.card-body {
+    padding: 25px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.description {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.2s;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    border-color: var(--primary-pink);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(230, 0, 126, 0.1);
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+    font-weight: 700;
+    margin-top: auto;
+}
+
+/* Papeletas */
+.price-tag {
+    background: #FFD700;
+    color: #333;
+    font-weight: bold;
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    align-self: center;
+}
+
+.total-display {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--text-dark);
+    margin-top: 10px;
+}
+
+/* Merch */
+.merch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.merch-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.merch-item:last-child {
+    border-bottom: none;
+}
+
+.merch-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.merch-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.merch-price {
+    color: var(--primary-pink);
+    font-weight: bold;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(230, 0, 126, 0.2);
+    border-top: 5px solid var(--primary-pink);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.blurred {
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}

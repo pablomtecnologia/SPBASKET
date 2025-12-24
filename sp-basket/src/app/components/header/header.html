@@ -1,0 +1,91 @@
+<header class="header">
+  <div class="header-container">
+    <div class="logo">
+      <a routerLink="/">
+        <img src="/assets/images/logo-sp-pink.png" alt="SP Basket Logo" class="logo-image">
+      </a>
+    </div>
+
+    <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" [class.active]="mobileMenuOpen">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav class="nav" [class.mobile-open]="mobileMenuOpen">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()">
+        CORAZÓN ROSA
+      </a>
+      <a routerLink="/equipos" routerLinkActive="active" (click)="closeMobileMenu()">
+        EQUIPOS
+      </a>
+      <a routerLink="/pioneers" routerLinkActive="active" (click)="closeMobileMenu()" class="nav-highlight">
+        PIONEERS
+      </a>
+      <a routerLink="/competiciones" routerLinkActive="active" (click)="closeMobileMenu()">
+        COMPETICIONES
+      </a>
+      <a routerLink="/noticias" routerLinkActive="active" (click)="closeMobileMenu()">
+        NOTICIAS
+      </a>
+      <a *ngIf="authService.isAuthenticated()" routerLink="/documentacion" routerLinkActive="active"
+        (click)="closeMobileMenu()">
+        DOCUMENTACIÓN
+      </a>
+      <a routerLink="/contacto" routerLinkActive="active" (click)="closeMobileMenu()">
+        CONTACTO
+      </a>
+      <a *ngIf="authService.isAuthenticated()" routerLink="/galeria" routerLinkActive="active"
+        (click)="closeMobileMenu()">
+        GALERÍA
+      </a>
+      <a *ngIf="authService.isAuthenticated() && !authService.isAdmin()" routerLink="/pagos" routerLinkActive="active"
+        (click)="closeMobileMenu()">
+        TIENDA/PAGOS
+      </a>
+      <a routerLink="/productos" routerLinkActive="active" (click)="closeMobileMenu()">
+        PRODUCTOS
+      </a>
+
+      <!-- Gestiones (Notificaciones y Admin) -->
+      <app-gestiones></app-gestiones>
+
+      <!-- Perfil (solo si está logueado) -->
+      <a *ngIf="authService.currentUser | async as user" routerLink="/perfil" routerLinkActive="active"
+        class="btn-profile" (click)="closeMobileMenu()">
+        <ng-container *ngIf="user.avatar; else defaultIcon">
+          <img [src]="user.avatar" alt="Avatar" class="header-avatar">
+        </ng-container>
+        <ng-template #defaultIcon>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </ng-template>
+        <span>MI PERFIL</span>
+      </a>
+
+      <!-- Login/Logout buttons -->
+      <a *ngIf="!authService.isAuthenticated()" routerLink="/login" routerLinkActive="active" class="btn-login"
+        (click)="closeMobileMenu()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+          <polyline points="10 17 15 12 10 7"></polyline>
+          <line x1="15" y1="12" x2="3" y2="12"></line>
+        </svg>
+        <span>ACCEDER</span>
+      </a>
+      <button *ngIf="authService.isAuthenticated()" (click)="logout()" class="btn-logout">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>CERRAR SESIÓN</span>
+      </button>
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,128 @@
+<div class="pagos-page fade-in">
+    <div class="container">
+        <h1 class="page-title text-center text-gradient">Zona de Pagos y Tienda</h1>
+        <p class="text-center subtitle">Realiza tus gestiones de forma segura y rápida.</p>
+
+        <!-- Mensajes de Estado -->
+        <div *ngIf="status === 'success'" class="alert alert-success fade-in">
+            ✅ ¡Pago realizado con éxito! Gracias por tu colaboración.
+        </div>
+        <div *ngIf="status === 'cancel'" class="alert alert-warning fade-in">
+            ⚠️ El pago ha sido cancelado. No se ha realizado ningún cargo.
+        </div>
+
+        <!-- Loader -->
+        <div *ngIf="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Conectando con pasarela segura...</p>
+        </div>
+
+        <div class="grid grid-3 payments-grid" [class.blurred]="loading">
+
+            <!-- TARJETA 1: FICHA -->
+            <div class="payment-card card-ficha">
+                <div class="card-header-payment bg-gradient-1">
+                    <div class="icon">📋</div>
+                    <h3>Abonar Ficha</h3>
+                </div>
+                <div class="card-body">
+                    <p class="description">Paga tu cuota mensual o abono de temporada cómodamente.</p>
+                    <div class="form-group">
+                        <label>Concepto</label>
+                        <input type="text" [(ngModel)]="conceptoFicha" class="form-control"
+                            placeholder="Ej: Marzo 2024">
+                    </div>
+                    <div class="form-group">
+                        <label>Importe (€)</label>
+                        <input type="number" [(ngModel)]="montoFicha" min="1" class="form-control">
+                    </div>
+                    <button (click)="pagarFicha()" class="btn btn-primary btn-block mt-3">
+                        Pagar {{ montoFicha }}€
+                    </button>
+                </div>
+            </div>
+
+            <!-- TARJETA 2: PAPELETAS -->
+            <div class="payment-card card-papeletas">
+                <div class="card-header-payment bg-gradient-2">
+                    <div class="icon">🎟️</div>
+                    <h3>Lotería Navidad</h3>
+                </div>
+                <div class="card-body">
+                    <p class="description">Abono obligatorio de 100€ (50 papeletas).</p>
+
+                    <!-- Mensajes de Estado DINÁMICOS -->
+                    <div class="status-alerts mb-3">
+                        <div class="alert alert-warning text-sm" *ngIf="estadoPapeletas === 'pendiente'">
+                            ⏳ <strong>En Validación:</strong> Espera revisión del admin.
+                        </div>
+                        <div class="alert alert-success text-sm" *ngIf="estadoPapeletas === 'validado_sin_pagar'">
+                            ✅ <strong>Validado:</strong> Foto correcta. Procede al pago.
+                        </div>
+                        <div class="alert alert-success text-sm" *ngIf="estadoPapeletas === 'pagado'">
+                            🎉 <strong>Completado:</strong> Papeletas pagadas.
+                        </div>
+                        <div class="alert alert-danger text-sm" *ngIf="estadoPapeletas === 'rechazado'">
+                            ❌ <strong>Rechazado:</strong> Sube una nueva foto.
+                        </div>
+                        <div class="alert alert-info text-sm" *ngIf="estadoPapeletas === 'none'">
+                            📷 <strong>Paso 1:</strong> Sube la foto para validar.
+                        </div>
+                    </div>
+
+                    <!-- Sección Subida (Solo si none o rechazado) -->
+                    <div class="form-group" *ngIf="estadoPapeletas === 'none' || estadoPapeletas === 'rechazado'">
+                        <input type="file" (change)="onFileSelected($event)" accept="image/*" class="form-control mb-2">
+                        <button (click)="subirFoto()" class="btn btn-sm btn-outline-primary w-100"
+                            [disabled]="uploadingFoto || !fotoTalones">
+                            {{ uploadingFoto ? 'Subiendo...' : '📤 Enviar a Revisión' }}
+                        </button>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="total-display my-3" *ngIf="estadoPapeletas !== 'pagado'">
+                        Total: <strong>100€</strong>
+                    </div>
+
+                    <!-- Botón Pagar -->
+                    <button (click)="pagarPapeletas()" class="btn btn-secondary btn-block"
+                        [disabled]="estadoPapeletas !== 'validado_sin_pagar'"
+                        [style.opacity]="estadoPapeletas !== 'validado_sin_pagar' ? '0.6' : '1'">
+                        {{ estadoPapeletas === 'pagado' ? '✅ Pagado' : (estadoPapeletas === 'validado_sin_pagar' ? '💳
+                        Pagar 100€' : '🚫 Esperando Validación') }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- TARJETA 3: MERCHANDISING -->
+            <div class="payment-card card-merch">
+                <div class="card-header-payment bg-gradient-3">
+                    <div class="icon">👕</div>
+                    <h3>Merchandising</h3>
+                </div>
+                <div class="card-body">
+                    <p class="description">Viste los colores de tu equipo.</p>
+                    <div class="merch-list">
+                        <div class="merch-item">
+                            <div class="merch-info">
+                                <span class="merch-name">Camiseta Oficial</span>
+                                <span class="merch-price">25€</span>
+                            </div>
+                            <button (click)="comprarProducto('Camiseta SP Basket', 25)"
+                                class="btn btn-sm btn-outline-primary">Comprar</button>
+                        </div>
+                        <div class="merch-item">
+                            <div class="merch-info">
+                                <span class="merch-name">Bufanda Pioneers</span>
+                                <span class="merch-price">12€</span>
+                            </div>
+                            <button (click)="comprarProducto('Bufanda Pioneers', 12)"
+                                class="btn btn-sm btn-outline-primary">Comprar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

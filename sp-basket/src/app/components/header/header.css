@@ -1,0 +1,269 @@
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: var(--white);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+}
+
+.header-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--spacing-lg);
+    height: 60px;
+}
+
+/* Logo Styles */
+.logo a {
+    display: block;
+    display: flex;
+    align-items: center;
+}
+
+.logo-image {
+    height: 42px;
+    width: auto;
+    transition: all var(--transition-normal);
+    border-radius: var(--radius-sm);
+}
+
+.logo-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(235, 52, 137, 0.3);
+}
+
+/* Navigation Styles */
+.nav {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.nav a {
+    padding: 0.35rem 0.45rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: -0.4px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    position: relative;
+    white-space: nowrap;
+}
+
+/* Elemento destacado del menú (PIONEERS) */
+.nav-highlight {
+    color: var(--primary-pink) !important;
+    font-weight: 800 !important;
+}
+
+.nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    /* Ajustado */
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 80%;
+    height: 3px;
+    background: var(--primary-pink);
+    border-radius: 2px;
+    transition: transform var(--transition-normal);
+}
+
+.nav a:hover {
+    color: var(--primary-pink);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.nav a:hover::after {
+    transform: translateX(-50%) scaleX(1);
+}
+
+.nav a.active {
+    color: var(--primary-pink);
+    background: rgba(230, 0, 126, 0.05);
+}
+
+.nav a.active::after {
+    transform: translateX(-50%) scaleX(1);
+}
+
+/* Mimetized User Actions (Profile, Login, Logout) */
+.btn-profile,
+.btn-login,
+.btn-logout {
+    display: flex !important;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.3px;
+    color: var(--text-dark) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-profile svg,
+.btn-login svg,
+.btn-logout svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--text-dark);
+    transition: all var(--transition-fast);
+}
+
+.btn-profile:hover,
+.btn-login:hover,
+.btn-logout:hover {
+    color: var(--primary-pink) !important;
+    background: rgba(230, 0, 126, 0.05) !important;
+    transform: translateY(-1px);
+}
+
+.header-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.btn-profile:hover svg,
+.btn-login:hover svg,
+.btn-logout:hover svg {
+    stroke: var(--primary-pink);
+}
+
+/* Specific styling adjustments if needed */
+.btn-logout {
+    margin-left: 2px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 0 !important;
+    padding-left: 0.8rem !important;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    /* Por defecto oculto, visible en media query */
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 1001;
+}
+
+.mobile-menu-toggle span {
+    width: 28px;
+    height: 3px;
+    background: var(--primary-pink);
+    border-radius: 2px;
+    transition: all var(--transition-normal);
+}
+
+.mobile-menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* ----------------------------------------------------
+   RESPONSIVE DESIGN AGRESIVO (Para solucionar colapso)
+   ---------------------------------------------------- */
+/* Si la pantalla es menor a 1250px, muestra menú hamburguesa */
+@media (max-width: 1250px) {
+    .mobile-menu-toggle {
+        display: flex;
+        /* Mostrar botón menú */
+    }
+
+    .nav {
+        position: fixed;
+        top: 60px;
+        right: -100%;
+        width: 300px;
+        /* Menú lateral ancho */
+        height: calc(100vh - 60px);
+        background: var(--white);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: var(--spacing-md);
+        box-shadow: var(--shadow-xl);
+        /* Sombra fuerte */
+        transition: right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        /* Animación suave */
+        overflow-y: auto;
+        border-left: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .nav.mobile-open {
+        right: 0;
+    }
+
+    .nav a {
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 1rem;
+        /* Letra grande en móvil */
+        text-align: left;
+    }
+
+    .nav a:last-child {
+        border-bottom: none;
+    }
+
+    .nav a::after {
+        display: none;
+    }
+
+    .nav a.active {
+        background: rgba(230, 0, 126, 0.05);
+        color: var(--primary-pink);
+        border-left: 4px solid var(--primary-pink);
+        /* Indicador lateral */
+    }
+
+    /* Botones de acción en menú móvil */
+    .btn-profile,
+    .btn-login,
+    .btn-logout {
+        padding: 1.2rem 1.5rem !important;
+        font-size: 1rem;
+        justify-content: flex-start;
+        border: none !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        width: 100%;
+    }
+
+    .btn-logout {
+        margin-left: 0;
+        border-left: none !important;
+        background: #fcfcfc !important;
+        /* Ligeramente diferente */
+    }
+}

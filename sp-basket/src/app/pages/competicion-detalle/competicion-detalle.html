@@ -1,0 +1,185 @@
+<div class="competicion-detalle-page" *ngIf="competition" [style.background-image]="'url(' + competition.image + ')'"
+    [class.has-bg]="competition.image">
+    <div class="bg-overlay"></div>
+    <section class="page-header">
+        <div class="container">
+            <button class="back-button" (click)="goBack()">
+                ← Volver a Competiciones
+            </button>
+            <h1 class="fade-in">{{ competition.name }}</h1>
+            <p class="fade-in">Temporada {{ competition.season }}</p>
+        </div>
+    </section>
+
+    <!-- Statistics -->
+    <section class="section stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🏀</div>
+                    <div class="stat-number">{{ competition.matches.length }}</div>
+                    <div class="stat-label">Partidos Totales</div>
+                </div>
+                <div class="stat-card win">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-number">{{ getWins() }}</div>
+                    <div class="stat-label">Victorias</div>
+                </div>
+                <div class="stat-card loss">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-number">{{ getLosses() }}</div>
+                    <div class="stat-label">Derrotas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-number">{{ getUpcomingMatches().length }}</div>
+                    <div class="stat-label">Por Jugar</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Next Match Hero Section (Enhanced) -->
+    <section class="section next-match-section" *ngIf="getUpcomingMatches().length > 0">
+        <div class="container">
+            <h2 class="section-title text-center">Próximo Partido</h2>
+
+            <div class="big-hero-card">
+                <div class="hero-bg-accent"></div>
+                <div class="hero-round-badge">Jornada {{ getUpcomingMatches()[0].round }}</div>
+
+                <div class="hero-main-content">
+                    <!-- Home Team -->
+                    <div class="hero-team-block">
+                        <div class="big-logo-wrapper">
+                            <img *ngIf="getUpcomingMatches()[0].homeTeamLogo"
+                                [src]="getUpcomingMatches()[0].homeTeamLogo" [alt]="getUpcomingMatches()[0].homeTeam">
+                            <div *ngIf="!getUpcomingMatches()[0].homeTeamLogo" class="logo-fallback">🏀</div>
+                        </div>
+                        <h2 class="big-team-name">{{ getUpcomingMatches()[0].homeTeam }}</h2>
+                    </div>
+
+                    <!-- VS / Info Info -->
+                    <div class="hero-center-info">
+                        <div class="vs-badge">VS</div>
+                        <div class="match-datetime">
+                            <span class="date">{{ getUpcomingMatches()[0].date }}</span>
+                            <span class="time">{{ getUpcomingMatches()[0].time }}</span>
+                        </div>
+                        <div class="match-location">
+                            <i class="fas fa-map-pin"></i> {{ getUpcomingMatches()[0].location }}
+                        </div>
+                    </div>
+
+                    <!-- Away Team -->
+                    <div class="hero-team-block">
+                        <div class="big-logo-wrapper">
+                            <img *ngIf="getUpcomingMatches()[0].awayTeamLogo"
+                                [src]="getUpcomingMatches()[0].awayTeamLogo" [alt]="getUpcomingMatches()[0].awayTeam">
+                            <div *ngIf="!getUpcomingMatches()[0].awayTeamLogo" class="logo-fallback">🏀</div>
+                        </div>
+                        <h2 class="big-team-name">{{ getUpcomingMatches()[0].awayTeam }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results & Calendar Section (Full Width Cards) -->
+    <section class="section matches-list-section">
+        <div class="container">
+
+            <!-- RESULTS HEADER -->
+            <div class="section-header-block">
+                <h2 class="section-title text-center">Resultados de la Temporada</h2>
+            </div>
+
+            <div class="big-match-list">
+                <div class="big-match-card result-card" *ngFor="let match of getPlayedMatches().reverse()"
+                    [class.win]="isWin(match)" [class.loss]="!isWin(match)">
+
+                    <div class="card-status-bar"></div>
+
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="round-pill">Jornada {{ match.round }}</span>
+                            <span class="date-text">{{ match.date }} · {{ match.location }}</span>
+                            <span class="result-label" [class.win]="isWin(match)" [class.loss]="!isWin(match)">
+                                {{ isWin(match) ? 'VICTORIA' : 'DERROTA' }}
+                            </span>
+                        </div>
+
+                        <div class="card-teams-row">
+                            <!-- Team 1 -->
+                            <div class="team-side home" [class.winner]="match.homeScore! > match.awayScore!">
+                                <span class="t-name">{{ match.homeTeam }}</span>
+                                <div class="t-logo">
+                                    <img [src]="match.homeTeamLogo || 'assets/images/logo-placeholder.png'">
+                                </div>
+                                <span class="score-digit">{{ match.homeScore }}</span>
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="score-separator">-</div>
+
+                            <!-- Team 2 -->
+                            <div class="team-side away" [class.winner]="match.awayScore! > match.homeScore!">
+                                <span class="score-digit">{{ match.awayScore }}</span>
+                                <div class="t-logo">
+                                    <img [src]="match.awayTeamLogo || 'assets/images/logo-placeholder.png'">
+                                </div>
+                                <span class="t-name">{{ match.awayTeam }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPCOMING LIST -->
+            <div class="section-header-block mt-large" *ngIf="getUpcomingMatches().length > 1">
+                <h2 class="section-title text-center">Próximos Encuentros</h2>
+            </div>
+
+            <div class="big-match-list" *ngIf="getUpcomingMatches().length > 1">
+                <div class="big-match-card upcoming-card" *ngFor="let match of getUpcomingMatches().slice(1)">
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="round-pill">Jornada {{ match.round }}</span>
+                            <span class="date-text">{{ match.date }} - {{ match.time }}</span>
+                        </div>
+
+                        <div class="upcoming-teams-row">
+                            <div class="u-team">
+                                <div class="u-logo">
+                                    <img [src]="match.homeTeamLogo || 'assets/images/logo-placeholder.png'">
+                                </div>
+                                <span class="u-name">{{ match.homeTeam }}</span>
+                            </div>
+
+                            <div class="u-vs">VS</div>
+
+                            <div class="u-team">
+                                <div class="u-logo">
+                                    <img [src]="match.awayTeamLogo || 'assets/images/logo-placeholder.png'">
+                                </div>
+                                <span class="u-name">{{ match.awayTeam }}</span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer-row">
+                            <span class="loc-text">📍 {{ match.location }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+<div class="error-page" *ngIf="!competition">
+    <div class="container text-center">
+        <h1>Competición no encontrada</h1>
+        <button class="btn btn-primary" (click)="goBack()">Volver a Competiciones</button>
+    </div>
+</div>

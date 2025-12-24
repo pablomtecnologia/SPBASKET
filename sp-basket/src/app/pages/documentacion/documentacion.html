@@ -1,0 +1,49 @@
+<div class="documentacion-page">
+    <section class="page-header">
+        <div class="container">
+            <h1 class="fade-in">Documentación</h1>
+            <p class="fade-in">Documentos importantes y recursos para jugadores y familias</p>
+        </div>
+    </section>
+
+    <!-- ENLACE AL RECONOCIMIENTO MÉDICO -->
+    <section class="section medical-link-section">
+        <div class="container">
+            <div class="medical-cta-card">
+                <div class="cta-content">
+                    <div class="cta-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Reconocimiento Médico</h2>
+                        <p>Gestiona tu reconocimiento médico, sube documentos y consulta el estado de validación.</p>
+                    </div>
+                </div>
+                <a routerLink="/medical-recognition" class="btn-cta">Ir a Gestión Médica →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- DOCUMENTOS -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Documentos Disponibles</h2>
+            <div class="docs-grid">
+                <div class="doc-card" *ngFor="let doc of documents">
+                    <div class="doc-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                        </svg>
+                    </div>
+                    <h3>{{ doc.title }}</h3>
+                    <p>{{ doc.description }}</p>
+                    <a [href]="doc.link" target="_blank" class="btn btn-outline">Descargar</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

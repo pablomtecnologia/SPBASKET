@@ -1,0 +1,179 @@
+<div class="productos-page">
+    <!-- Hero Section con Countdown -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content fade-in">
+                <h1 class="glow-text">¡Productos Próximamente!</h1>
+                <p class="hero-subtitle">Estamos preparando el mejor merchandising para ti</p>
+
+                <!-- Countdown Timer -->
+                <div class="countdown-container">
+                    <div class="countdown-item">
+                        <div class="countdown-number">{{ countdown.days }}</div>
+                        <div class="countdown-label">Días</div>
+                    </div>
+                    <div class="countdown-divider">:</div>
+                    <div class="countdown-item">
+                        <div class="countdown-number">{{ countdown.hours }}</div>
+                        <div class="countdown-label">Horas</div>
+                    </div>
+                    <div class="countdown-divider">:</div>
+                    <div class="countdown-item">
+                        <div class="countdown-number">{{ countdown.minutes }}</div>
+                        <div class="countdown-label">Minutos</div>
+                    </div>
+                    <div class="countdown-divider">:</div>
+                    <div class="countdown-item">
+                        <div class="countdown-number">{{ countdown.seconds }}</div>
+                        <div class="countdown-label">Segundos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Voting Section -->
+    <section class="voting-section section">
+        <div class="container">
+            <h2 class="section-title">🗳️ ¿Qué Producto Quieres Ver Primero?</h2>
+            <p class="section-subtitle">Vota por tus productos favoritos y ayúdanos a decidir qué lanzar primero</p>
+
+            <!-- Login Warning -->
+            <div *ngIf="!isLoggedIn" class="login-warning fade-in">
+                <div class="warning-icon">🔒</div>
+                <h3>Inicia sesión para votar</h3>
+                <p>Necesitas estar registrado para poder votar por tus productos favoritos</p>
+                <a routerLink="/login" class="btn btn-primary">Iniciar Sesión</a>
+            </div>
+
+            <!-- Voting Grid -->
+            <div class="voting-grid" [class.disabled]="!isLoggedIn">
+                <div *ngFor="let product of votingProducts" class="voting-card" [class.voted]="product.userVoted"
+                    [class.disabled]="!isLoggedIn">
+                    <div class="voting-image">
+                        <img [src]="product.image" [alt]="product.name">
+                    </div>
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.description }}</p>
+                    <div class="vote-stats">
+                        <div class="vote-count">
+                            <span class="vote-icon">👍</span>
+                            <span class="vote-number">{{ product.votes }}</span>
+                            <span class="vote-label">votos</span>
+                        </div>
+                        <button class="btn-vote" [disabled]="!isLoggedIn || product.userVoted || isVoting"
+                            (click)="voteProduct(product)">
+                            <span *ngIf="isVoting && votingProductId === product.id" class="spinner"></span>
+                            <span *ngIf="!isVoting || votingProductId !== product.id">
+                                {{ product.userVoted ? '✅ Votado' : '👍 Votar' }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voting Results Bar -->
+            <div *ngIf="isLoggedIn" class="voting-results">
+                <h3>Resultados en Tiempo Real</h3>
+                <div class="results-bars">
+                    <div *ngFor="let product of votingProducts" class="result-bar">
+                        <div class="bar-label">
+                            <span class="product-name">{{ product.name }}</span>
+                            <span class="product-votes">{{ product.votes }} votos ({{ getVotePercentage(product)
+                                }}%)</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" [style.width.%]="getVotePercentage(product)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Preview Gallery -->
+    <section class="preview-section section">
+        <div class="container">
+            <h2 class="section-title">👀 Adelanto de Productos</h2>
+            <p class="section-subtitle">Esto es solo una muestra de lo que estamos preparando</p>
+
+            <div class="preview-gallery">
+                <div *ngFor="let preview of productPreviews" class="preview-card slide-in">
+                    <div class="preview-image">
+                        <img [src]="preview.image" [alt]="preview.name">
+                        <div class="preview-overlay">
+                            <span class="preview-badge">{{ preview.status }}</span>
+                        </div>
+                    </div>
+                    <div class="preview-info">
+                        <h3>{{ preview.name }}</h3>
+                        <p>{{ preview.description }}</p>
+                        <div class="preview-price">
+                            <span class="price-estimate">{{ preview.price }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section section">
+        <div class="container">
+            <div class="newsletter-card">
+                <div class="newsletter-icon">📬</div>
+                <h2>¡Sé el Primero en Saberlo!</h2>
+                <p>Suscríbete y te avisaremos en cuanto lancemos la tienda oficial</p>
+
+                <form class="newsletter-form" (ngSubmit)="subscribeNewsletter()" *ngIf="!subscribed">
+                    <div class="form-group">
+                        <input type="text" class="form-input" [(ngModel)]="subscriberName" name="name"
+                            placeholder="Tu nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" class="form-input" [(ngModel)]="subscriberEmail" name="email"
+                            placeholder="tu@email.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg" [disabled]="isSubscribing">
+                        <span *ngIf="!isSubscribing">✨ Suscribirme</span>
+                        <span *ngIf="isSubscribing" class="spinner"></span>
+                    </button>
+                </form>
+
+                <div *ngIf="subscribed" class="success-message fade-in">
+                    ✅ ¡Gracias! Te avisaremos del lanzamiento.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section section">
+        <div class="container">
+            <h2 class="section-title">✨ ¿Por qué esperar nuestros productos?</h2>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🏀</div>
+                    <h3>Diseño Oficial</h3>
+                    <p>Todos nuestros productos llevan los diseños oficiales del club</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>Calidad Premium</h3>
+                    <p>Materiales de primera calidad que duran temporadas</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💗</div>
+                    <h3>Apoya al Equipo</h3>
+                    <p>Parte de los beneficios van directamente al club</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚚</div>
+                    <h3>Envío Rápido</h3>
+                    <p>Entregas en 24-48h en toda España</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

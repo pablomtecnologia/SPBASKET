@@ -1,0 +1,234 @@
+/* MODAL SUPER SIMPLE */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    padding: 2rem;
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 3px solid #f0f0f0;
+}
+
+.modal-top h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2.5rem;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.close-btn:hover {
+    background: var(--primary-pink);
+    color: white;
+    transform: rotate(90deg);
+}
+
+/* FORMULARIO */
+.simple-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-group label {
+    font-weight: 700;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.input-group input[type="text"],
+.input-group input[type="url"],
+.input-group select,
+.input-group textarea {
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-pink);
+    box-shadow: 0 0 0 4px rgba(235, 52, 137, 0.1);
+}
+
+.input-group textarea {
+    resize: vertical;
+    min-height: 180px;
+    line-height: 1.6;
+}
+
+.two-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 1rem;
+    background: #f8f8f8;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s;
+}
+
+.checkbox-label:hover {
+    border-color: var(--primary-pink);
+    background: rgba(235, 52, 137, 0.05);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    font-weight: 600;
+    color: #666;
+}
+
+/* TAGS */
+.tags-zone {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    min-height: 60px;
+    align-items: center;
+}
+
+.tags-zone input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0.5rem;
+    font-size: 1rem;
+    min-width: 150px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--primary-pink), #d0006a);
+    color: white;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.tag button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+/* BOTONES */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1.5rem;
+    border-top: 3px solid #f0f0f0;
+}
+
+.btn-cancel,
+.btn-submit {
+    flex: 1;
+    padding: 1.2rem;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-cancel:hover {
+    background: #e0e0e0;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--primary-pink) 0%, #c0006a 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(235, 52, 137, 0.4);
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(235, 52, 137, 0.6);
+}
+
+@media (max-width: 768px) {
+    .two-cols {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+}

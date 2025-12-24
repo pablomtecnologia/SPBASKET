@@ -1,0 +1,133 @@
+<div class="equipos-page">
+    <section class="page-header" *ngIf="!selectedTeam">
+        <div class="container">
+            <h1 class="fade-in">Nuestros Equipos</h1>
+            <p class="fade-in">Conoce a todos los equipos de SP Basket</p>
+        </div>
+    </section>
+
+    <!-- Vista de Equipos -->
+    <section class="section" *ngIf="!selectedTeam">
+        <div class="container">
+            <div class="teams-grid">
+                <div class="team-card" *ngFor="let team of teams" (click)="selectTeam(team)">
+                    <div class="team-image-container">
+                        <div class="team-photo-bg" [ngClass]="'team-bg-' + team.id"></div>
+                    </div>
+                    <div class="team-info">
+                        <h3>{{ team.nombre }}</h3>
+                        <p>{{ team.categoria }}</p>
+                        <span class="team-count">{{ team.jugadores.length }} miembros</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vista de Jugadores (Cromos Giratorios) -->
+    <section class="section cromos-section" *ngIf="selectedTeam">
+        <div class="container">
+            <button class="btn-back" (click)="backToTeams()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver a Equipos
+            </button>
+
+            <!-- Instrucciones eliminadas -->
+
+            <!-- Cuerpo Técnico (si hay) -->
+            <div class="section-title" *ngIf="getTecnicos().length > 0">
+                <h2>👨‍🏫 Cuerpo Técnico</h2>
+            </div>
+            <div class="cromos-grid" *ngIf="getTecnicos().length > 0">
+                <div class="cromo-container" *ngFor="let tecnico of getTecnicos()" (click)="toggleFlip($event)">
+                    <div class="player-card">
+                        <div class="card-front">
+                            <div class="cromo-frame tecnico">
+                                <div class="cromo-shine"></div>
+                                <div class="cromo-image">
+                                    <img [src]="tecnico.foto" [alt]="tecnico.nombre">
+                                </div>
+                                <div class="cromo-overlay tecnico-overlay">
+                                    <div class="rol-badge">{{ tecnico.rol }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-back">
+                            <div class="back-content">
+                                <div class="back-header">
+                                    <div class="back-logo">SP</div>
+                                    <div class="back-team">{{ selectedTeam.nombre }}</div>
+                                </div>
+
+                                <div class="back-player-info">
+                                    <h3 class="back-name">{{ tecnico.nombre }}</h3>
+                                    <h4 class="back-surname">{{ tecnico.apellidos }}</h4>
+                                    <div class="back-position">{{ tecnico.rol }}</div>
+                                </div>
+
+                                <div class="back-footer">
+                                    <div class="season-badge">2024-2025</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jugadores - Cromos -->
+            <div class="section-title">
+                <h2>🏀 Plantilla</h2>
+                <p class="subtitle">Colección oficial de cromos {{ selectedTeam.nombre }}</p>
+            </div>
+
+            <div class="cromos-grid">
+                <div class="cromo-container" *ngFor="let jugador of getJugadores(); let i = index"
+                    (click)="toggleFlip($event)" [style.animation-delay]="(i * 0.1) + 's'">
+                    <div class="player-card">
+                        <!-- FRENTE del cromo - Solo la foto -->
+                        <div class="card-front">
+                            <div class="cromo-frame">
+                                <div class="cromo-shine"></div>
+                                <div class="cromo-image">
+                                    <img [src]="jugador.foto" [alt]="jugador.nombre + ' ' + jugador.apellidos">
+                                </div>
+                                <!-- Removed dorsal badge as requested -->
+                            </div>
+                        </div>
+
+                        <!-- REVERSO del cromo - Info y frase -->
+                        <div class="card-back">
+                            <div class="back-content">
+                                <div class="back-header">
+                                    <div class="back-logo">SP</div>
+                                    <div class="back-team">{{ selectedTeam.nombre }}</div>
+                                </div>
+
+                                <div class="back-player-info">
+                                    <div class="back-number">{{ jugador.numero }}</div>
+                                    <h3 class="back-name">{{ jugador.nombre }}</h3>
+                                    <h4 class="back-surname">{{ jugador.apellidos }}</h4>
+                                    <div class="back-position">{{ jugador.posicion }}</div>
+                                </div>
+
+                                <div class="back-quote">
+                                    <div class="quote-marks">"</div>
+                                    <p class="quote-text">{{ jugador.frase }}</p>
+                                </div>
+
+                                <div class="back-footer">
+                                    <div class="season-badge">2024-2025</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
