@@ -3,6 +3,8 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { tap, map, catchError } from 'rxjs/operators';
 
+import { environment } from '../../environments/environment';
+
 interface User {
   id?: number;
   username: string;
@@ -24,7 +26,7 @@ export class AuthService {
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser: Observable<User | null>;
 
-  private apiUrl = 'https://common-lions-grab.loca.lt/api'; // backend URL
+  private apiUrl = environment.apiUrl; // backend URL
 
   constructor(private http: HttpClient) {
     const stored = localStorage.getItem('currentUser');
@@ -58,10 +60,7 @@ export class AuthService {
           this.currentUserSubject.next(user);
         }),
         map(() => true),
-        catchError((error) => {
-          console.error('Login error:', error);
-          return of(false);
-        })
+        // catchError is handled in component
       );
   }
 

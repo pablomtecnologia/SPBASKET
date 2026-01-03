@@ -36,7 +36,7 @@ export class RegisterComponent {
         this.loading = true;
         this.errorMessage = '';
 
-        this.http.post('https://common-lions-grab.loca.lt/api/register', this.userData)
+        this.http.post('http://localhost:3001/api/register', this.userData)
             .subscribe({
                 next: (response: any) => {
                     this.successMessage = '¡Registro completado! Redirigiendo al login...';

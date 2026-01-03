@@ -13,6 +13,7 @@ import { ProductosComponent } from './pages/productos/productos';
 import { LoginComponent } from './pages/login/login';
 import { RegisterComponent } from './pages/register/register';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password';
+import { ResetPasswordComponent } from './pages/reset-password/reset-password';
 import { PerfilComponent } from './pages/perfil/perfil';
 import { MedicalRecognitionComponent } from './pages/medical-recognition/medical-recognition';
 import { authGuard } from './guards/auth-guard';
@@ -25,6 +26,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'pioneers', component: PioneersComponent }, // Nueva ruta PIONEERS
   { path: 'equipos', component: EquiposComponent },
   { path: 'equipos/:id', component: EquipoDetalleComponent },

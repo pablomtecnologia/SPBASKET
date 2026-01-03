@@ -70,7 +70,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
         const headers = this.authService.getAuthHeaders();
         const t = new Date().getTime(); // Timestamp para evitar caché
 
-        this.http.get<HistorialReconocimiento[]>(`https://common-lions-grab.loca.lt/api/reconocimientos?t=${t}`, { headers })
+        this.http.get<HistorialReconocimiento[]>(`http://localhost:3001/api/reconocimientos?t=${t}`, { headers })
             .subscribe({
                 next: (data) => {
                     this.historialReconocimientos = data;
@@ -81,7 +81,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
                 }
             });
 
-        this.http.get<HistorialPapeleta[]>(`https://common-lions-grab.loca.lt/api/papeletas?t=${t}`, { headers })
+        this.http.get<HistorialPapeleta[]>(`http://localhost:3001/api/papeletas?t=${t}`, { headers })
             .subscribe({
                 next: (data) => {
                     this.historialPapeletas = data;
@@ -93,7 +93,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
             });
 
         // Cargar historial de pagos generales con anti-caché
-        this.http.get<HistorialPago[]>(`https://common-lions-grab.loca.lt/api/pagos/historial?t=${t}`, { headers })
+        this.http.get<HistorialPago[]>(`http://localhost:3001/api/pagos/historial?t=${t}`, { headers })
             .subscribe({
                 next: (data) => {
                     console.log('Pagos cargados:', data);
@@ -107,11 +107,11 @@ export class HistorialComponent implements OnInit, OnDestroy {
 
     descargarFactura(p: HistorialPapeleta) {
         if (!p.pagado) return;
-        this.downloadPdf(`https://common-lions-grab.loca.lt/api/papeletas/invoice`, `factura_papeletas.pdf`);
+        this.downloadPdf(`http://localhost:3001/api/papeletas/invoice`, `factura_papeletas.pdf`);
     }
 
     descargarFacturaGenerica(p: HistorialPago) {
-        this.downloadPdf(`https://common-lions-grab.loca.lt/api/pagos/factura/${p.id}`, `factura_compra_${p.id}.pdf`);
+        this.downloadPdf(`http://localhost:3001/api/pagos/factura/${p.id}`, `factura_compra_${p.id}.pdf`);
     }
 
     private downloadPdf(url: string, name: string) {

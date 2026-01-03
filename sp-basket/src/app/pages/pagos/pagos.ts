@@ -70,7 +70,7 @@ export class PagosComponent implements OnInit, OnDestroy {
 
     const headers = this.auth.getAuthHeaders();
     // Añadimos timestamp para evitar caché del navegador
-    const url = `https://common-lions-grab.loca.lt/api/papeletas?t=${new Date().getTime()}`;
+    const url = `http://localhost:3001/api/papeletas?t=${new Date().getTime()}`;
 
     this.http.get<any[]>(url, { headers }).subscribe({
       next: (data) => {
@@ -128,7 +128,7 @@ export class PagosComponent implements OnInit, OnDestroy {
       'Bypass-Tunnel-Reminder': 'true'
     });
 
-    this.http.post('https://common-lions-grab.loca.lt/api/papeletas/upload', formData, { headers })
+    this.http.post('http://localhost:3001/api/papeletas/upload', formData, { headers })
       .subscribe({
         next: () => {
           this.papeletaUploaded = true;
@@ -189,7 +189,7 @@ export class PagosComponent implements OnInit, OnDestroy {
     this.loading = true;
     const headers = this.auth.getAuthHeaders();
 
-    this.http.post<any>('https://common-lions-grab.loca.lt/api/create-checkout-session', {
+    this.http.post<any>('http://localhost:3001/api/create-checkout-session', {
       items,
       successUrl: window.location.origin + '/pagos?status=success',
       cancelUrl: window.location.origin + '/pagos?status=cancel'

@@ -112,8 +112,8 @@ export class GestionesComponent implements OnInit, OnDestroy {
         const isAdmin = this.authService.isAdmin();
 
         forkJoin({
-            reconocimientos: this.http.get<Reconocimiento[]>('https://common-lions-grab.loca.lt/api/reconocimientos', { headers }).pipe(catchError(() => of([]))),
-            papeletas: this.http.get<Papeleta[]>('https://common-lions-grab.loca.lt/api/papeletas', { headers }).pipe(catchError(() => of([])))
+            reconocimientos: this.http.get<Reconocimiento[]>('http://localhost:3001/api/reconocimientos', { headers }).pipe(catchError(() => of([]))),
+            papeletas: this.http.get<Papeleta[]>('http://localhost:3001/api/papeletas', { headers }).pipe(catchError(() => of([])))
         }).subscribe(results => {
             if (isAdmin) {
                 this.reconocimientosPendientes = results.reconocimientos.filter(r => r.estado === 'pendiente');
@@ -182,7 +182,7 @@ export class GestionesComponent implements OnInit, OnDestroy {
         const headers = this.authService.getAuthHeaders();
 
         this.loading = true;
-        this.http.put(`https://common-lions-grab.loca.lt/api/reconocimientos/${this.selectedReconocimiento.id}`, body, { headers })
+        this.http.put(`http://localhost:3001/api/reconocimientos/${this.selectedReconocimiento.id}`, body, { headers })
             .pipe(finalize(() => this.loading = false))
             .subscribe({
                 next: () => {
@@ -202,7 +202,7 @@ export class GestionesComponent implements OnInit, OnDestroy {
         if (!confirm(`¿Confirmar ${estado} para ${papeleta.nombre}?`)) return;
 
         const headers = this.authService.getAuthHeaders();
-        this.http.put(`https://common-lions-grab.loca.lt/api/papeletas/${papeleta.id}`, { estado }, { headers })
+        this.http.put(`http://localhost:3001/api/papeletas/${papeleta.id}`, { estado }, { headers })
             .subscribe({
                 next: () => {
                     this.loadData();

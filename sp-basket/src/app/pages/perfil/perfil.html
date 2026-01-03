@@ -64,6 +64,66 @@
                 </div>
             </div>
 
+            <!-- Gestión de Cuenta -->
+            <h3 class="section-title mt-4">Gestión de Cuenta</h3>
+            <div class="account-actions" style="margin-bottom: 20px;">
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
+                    Si deseas cambiar tu contraseña, te enviaremos un enlace de confirmación a tu email.
+                </p>
+                <button type="button" class="btn-change-password" (click)="requestPasswordChange()"
+                    [disabled]="loading">
+                    📩 Cambiar Contraseña por Email
+                </button>
+            </div>
+
+            <!-- Configuración App -->
+            <h3 class="section-title mt-4">Configuración de la App</h3>
+            <div class="settings-list">
+
+                <!-- Dark Mode -->
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Modo Oscuro</span>
+                        <span class="setting-desc">Interfaz con colores oscuros</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" (change)="toggleDarkMode($event)" [checked]="isDarkMode">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <!-- Notificaciones -->
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Notificaciones Email</span>
+                        <span class="setting-desc">Recibir novedades y noticias</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <!-- Descargar Datos -->
+                <div class="setting-item clickable" (click)="downloadData()">
+                    <div class="setting-info">
+                        <span class="setting-label">Mis Datos</span>
+                        <span class="setting-desc">Descargar copia de seguridad (GDPR)</span>
+                    </div>
+                    <div class="setting-action">⬇️</div>
+                </div>
+
+            </div>
+
+            <!-- Zona de Peligro -->
+            <div class="danger-zone mt-4">
+                <h4 class="danger-title">Zona de Peligro</h4>
+                <p class="danger-desc">Una vez elimines tu cuenta, no hay vuelta atrás. Por favor, asegúrate.</p>
+                <button type="button" class="btn-delete-account" (click)="deleteAccount()">
+                    🗑️ Eliminar mi Cuenta
+                </button>
+            </div>
+
             <!-- Botones Acción -->
             <div class="form-actions">
                 <button class="btn-save" [disabled]="!hasChanges || loading" (click)="saveChanges()">
@@ -86,5 +146,31 @@
             </button>
         </div>
 
+    </div>
+
+    <!-- Modal Ver Datos -->
+    <div class="modal-backdrop" *ngIf="showUserDataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Mis Datos Personales</h3>
+                <button class="close-btn" (click)="closeDataModal()">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="data-row"><strong>ID:</strong> <span>{{user.id}}</span></div>
+                <div class="data-row"><strong>Usuario:</strong> <span>{{user.username}}</span></div>
+                <div class="data-row"><strong>Nombre:</strong> <span>{{user.nombre}}</span></div>
+                <div class="data-row"><strong>Apellidos:</strong> <span>{{user.apellidos}}</span></div>
+                <div class="data-row"><strong>Email:</strong> <span>{{user.email}}</span></div>
+                <div class="data-row"><strong>Teléfono:</strong> <span>{{user.telefono || 'No registrado'}}</span></div>
+                <div class="data-row"><strong>Rol:</strong> <span>{{user.rol}}</span></div>
+                <div class="data-row"><strong>Licencia:</strong> <span>{{user.licencia || 'N/A'}}</span></div>
+                <div class="data-code">
+                    <pre>{{ user | json }}</pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" (click)="closeDataModal()">Cerrar</button>
+            </div>
+        </div>
     </div>
 </div>

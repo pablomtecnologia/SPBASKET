@@ -41,20 +41,20 @@
 
 .page-header p {
     font-size: 1.25rem;
-    color: var(--text-dark);
+    color: #222;
+    /* Darker text */
     font-weight: 500;
     opacity: 0.9;
     max-width: 600px;
     margin: 0 auto;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 /* Solución para la imagen de portada de la tarjeta */
 .album-cover-bg {
     width: 100%;
     height: 300px;
-    /* Altura fija para la portada */
     background-image: url('../../../assets/images/bg-galeria.jpg');
-    /* La misma imagen que el fondo, sabemos que funciona */
     background-size: cover;
     background-position: center top;
     transition: transform 0.5s ease;
@@ -72,7 +72,6 @@
     display: flex;
     justify-content: center;
     max-width: 500px;
-    /* Centrado y limitado */
     margin: 0 auto;
 }
 
@@ -108,7 +107,6 @@
     background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
     display: flex;
     align-items: flex-end;
-    /* Botón abajo */
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -139,15 +137,18 @@
 
 .album-info h3 {
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 800;
     margin-bottom: var(--spacing-sm);
-    color: var(--text-dark);
+    color: #000;
+    /* Pure black */
 }
 
 .album-description {
-    color: var(--text-light);
+    color: #000;
+    /* Pure black */
     margin-bottom: var(--spacing-md);
     line-height: 1.5;
+    font-weight: 500;
 }
 
 .album-date {

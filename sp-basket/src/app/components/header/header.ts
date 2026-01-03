@@ -12,7 +12,6 @@ import { GestionesComponent } from '../gestiones/gestiones';
 })
 export class HeaderComponent {
   mobileMenuOpen = false;
-
   constructor(public authService: AuthService, private router: Router) { }
 
   toggleMobileMenu() {

@@ -1,91 +1,50 @@
 <div class="productos-page">
     <!-- Hero Section con Countdown -->
-    <section class="hero-section">
-        <div class="container">
-            <div class="hero-content fade-in">
-                <h1 class="glow-text">¡Productos Próximamente!</h1>
-                <p class="hero-subtitle">Estamos preparando el mejor merchandising para ti</p>
+    <!-- Video Hero Section -->
+    <section class="video-hero">
+        <div class="video-overlay"></div>
+        <video autoplay muted loop playsinline class="video-bg">
+            <source src="/assets/videos/promo-camiseta.mp4" type="video/mp4">
+            <!-- Fallback para demo si no está el video local -->
+            <source
+                src="https://assets.mixkit.co/videos/preview/mixkit-basketball-player-dribbling-in-a-court-43896-large.mp4"
+                type="video/mp4">
+        </video>
 
-                <!-- Countdown Timer -->
-                <div class="countdown-container">
-                    <div class="countdown-item">
-                        <div class="countdown-number">{{ countdown.days }}</div>
-                        <div class="countdown-label">Días</div>
-                    </div>
-                    <div class="countdown-divider">:</div>
-                    <div class="countdown-item">
-                        <div class="countdown-number">{{ countdown.hours }}</div>
-                        <div class="countdown-label">Horas</div>
-                    </div>
-                    <div class="countdown-divider">:</div>
-                    <div class="countdown-item">
-                        <div class="countdown-number">{{ countdown.minutes }}</div>
-                        <div class="countdown-label">Minutos</div>
-                    </div>
-                    <div class="countdown-divider">:</div>
-                    <div class="countdown-item">
-                        <div class="countdown-number">{{ countdown.seconds }}</div>
-                        <div class="countdown-label">Segundos</div>
-                    </div>
+        <div class="hero-content fade-in">
+            <span class="badge-new">NUEVO LANZAMIENTO 2026</span>
+            <h1 class="mega-title">LA NUEVA PIEL</h1>
+            <p class="hero-subtitle">Edición Especial Pioneers Basket Cup</p>
+
+            <div class="hero-actions">
+                <button class="btn-mega-reserve" (click)="reserveProduct()">
+                    <span class="icon">🛒</span> RESERVAR CAMISETA
+                </button>
+                <button class="btn-watch-video" (click)="scrollToPreview()">
+                    VER MÁS PRODUCTOS
+                </button>
+            </div>
+
+            <!-- Countdown Timer Integrated -->
+            <div class="countdown-container glass-effect">
+                <div class="countdown-item">
+                    <div class="countdown-number">{{ countdown.days }}</div>
+                    <div class="countdown-label">Días</div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Product Voting Section -->
-    <section class="voting-section section">
-        <div class="container">
-            <h2 class="section-title">🗳️ ¿Qué Producto Quieres Ver Primero?</h2>
-            <p class="section-subtitle">Vota por tus productos favoritos y ayúdanos a decidir qué lanzar primero</p>
-
-            <!-- Login Warning -->
-            <div *ngIf="!isLoggedIn" class="login-warning fade-in">
-                <div class="warning-icon">🔒</div>
-                <h3>Inicia sesión para votar</h3>
-                <p>Necesitas estar registrado para poder votar por tus productos favoritos</p>
-                <a routerLink="/login" class="btn btn-primary">Iniciar Sesión</a>
-            </div>
-
-            <!-- Voting Grid -->
-            <div class="voting-grid" [class.disabled]="!isLoggedIn">
-                <div *ngFor="let product of votingProducts" class="voting-card" [class.voted]="product.userVoted"
-                    [class.disabled]="!isLoggedIn">
-                    <div class="voting-image">
-                        <img [src]="product.image" [alt]="product.name">
-                    </div>
-                    <h3>{{ product.name }}</h3>
-                    <p>{{ product.description }}</p>
-                    <div class="vote-stats">
-                        <div class="vote-count">
-                            <span class="vote-icon">👍</span>
-                            <span class="vote-number">{{ product.votes }}</span>
-                            <span class="vote-label">votos</span>
-                        </div>
-                        <button class="btn-vote" [disabled]="!isLoggedIn || product.userVoted || isVoting"
-                            (click)="voteProduct(product)">
-                            <span *ngIf="isVoting && votingProductId === product.id" class="spinner"></span>
-                            <span *ngIf="!isVoting || votingProductId !== product.id">
-                                {{ product.userVoted ? '✅ Votado' : '👍 Votar' }}
-                            </span>
-                        </button>
-                    </div>
+                <div class="countdown-divider">:</div>
+                <div class="countdown-item">
+                    <div class="countdown-number">{{ countdown.hours }}</div>
+                    <div class="countdown-label">Horas</div>
                 </div>
-            </div>
-
-            <!-- Voting Results Bar -->
-            <div *ngIf="isLoggedIn" class="voting-results">
-                <h3>Resultados en Tiempo Real</h3>
-                <div class="results-bars">
-                    <div *ngFor="let product of votingProducts" class="result-bar">
-                        <div class="bar-label">
-                            <span class="product-name">{{ product.name }}</span>
-                            <span class="product-votes">{{ product.votes }} votos ({{ getVotePercentage(product)
-                                }}%)</span>
-                        </div>
-                        <div class="bar-track">
-                            <div class="bar-fill" [style.width.%]="getVotePercentage(product)"></div>
-                        </div>
-                    </div>
+                <div class="countdown-divider">:</div>
+                <div class="countdown-item">
+                    <div class="countdown-number">{{ countdown.minutes }}</div>
+                    <div class="countdown-label">Minutos</div>
+                </div>
+                <div class="countdown-divider">:</div>
+                <div class="countdown-item">
+                    <div class="countdown-number">{{ countdown.seconds }}</div>
+                    <div class="countdown-label">Segundos</div>
                 </div>
             </div>
         </div>

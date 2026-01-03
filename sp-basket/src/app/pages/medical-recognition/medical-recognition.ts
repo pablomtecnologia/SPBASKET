@@ -80,7 +80,7 @@ export class MedicalRecognitionComponent implements OnInit {
     const headers = this.authService.getAuthHeaders();
     console.log('🔄 Iniciando carga de reconocimientos...');
 
-    this.http.get<Reconocimiento[]>('https://common-lions-grab.loca.lt/api/reconocimientos', { headers })
+    this.http.get<Reconocimiento[]>('http://localhost:3001/api/reconocimientos', { headers })
       .pipe(finalize(() => {
         console.log('🏁 Fin de carga - Forzando actualización vista');
         this.loading = false;
@@ -143,7 +143,7 @@ export class MedicalRecognitionComponent implements OnInit {
 
     const headers = this.authService.getAuthHeaders();
 
-    this.http.post('https://common-lions-grab.loca.lt/api/reconocimientos', formData, { headers })
+    this.http.post('http://localhost:3001/api/reconocimientos', formData, { headers })
       .pipe(finalize(() => {
         // Asegurar que sending se desactiva pase lo que pase
         // Lo ponemos en un timeout minúsculo para dar tiempo a que se procese el next/error
@@ -205,7 +205,7 @@ export class MedicalRecognitionComponent implements OnInit {
     this.loading = true;
     const headers = this.authService.getAuthHeaders();
 
-    this.http.get<Reconocimiento[]>('https://common-lions-grab.loca.lt/api/reconocimientos', { headers })
+    this.http.get<Reconocimiento[]>('http://localhost:3001/api/reconocimientos', { headers })
       .pipe(finalize(() => {
         this.loading = false;
         this.cd.detectChanges();
@@ -233,7 +233,7 @@ export class MedicalRecognitionComponent implements OnInit {
     const estado = accion === 'validar' ? 'validado' : 'rechazado';
     const headers = this.authService.getAuthHeaders();
 
-    this.http.put(`https://common-lions-grab.loca.lt/api/reconocimientos/${id}`, { estado, mensaje }, { headers })
+    this.http.put(`http://localhost:3001/api/reconocimientos/${id}`, { estado, mensaje }, { headers })
       .subscribe({
         next: () => {
           this.successMessage = `Reconocimiento ${estado} correctamente`;

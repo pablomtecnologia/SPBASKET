@@ -23,4 +23,12 @@ import { CookieConsentComponent } from './components/cookie-consent/cookie-conse
 })
 export class AppComponent {
   title = 'SP Basket';
+
+  constructor() {
+    // Inicializar tema
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark') {
+      document.body.classList.add('dark-theme');
+    }
+  }
 }

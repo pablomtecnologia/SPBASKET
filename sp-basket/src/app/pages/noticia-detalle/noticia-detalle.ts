@@ -49,7 +49,7 @@ export class NoticiaDetalleComponent implements OnInit {
     cargarNoticia(id: number) {
         console.log('📡 Cargando noticia con ID:', id);
         this.loading = true;
-        this.http.get<Noticia>(`https://common-lions-grab.loca.lt/api/noticias/${id}`).subscribe({
+        this.http.get<Noticia>(`http://localhost:3001/api/noticias/${id}`).subscribe({
             next: (data) => {
                 console.log('✅ Noticia recibida:', data);
                 this.noticia = data;

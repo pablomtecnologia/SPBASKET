@@ -24,7 +24,7 @@ export class ForgotPasswordComponent {
         this.message = '';
         this.isError = false;
 
-        this.http.post('https://common-lions-grab.loca.lt/api/forgot-password', { email: this.email })
+        this.http.post('http://localhost:3001/api/request-password-reset', { email: this.email })
             .subscribe({
                 next: (res: any) => {
                     this.loading = false;

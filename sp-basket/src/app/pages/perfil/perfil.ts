@@ -59,6 +59,8 @@ export class PerfilComponent implements OnInit {
         this.router.navigate(['/login']);
       }
     });
+
+    this.isDarkMode = localStorage.getItem('theme') === 'dark';
   }
 
   onAvatarSelected(event: any) {
@@ -74,7 +76,7 @@ export class PerfilComponent implements OnInit {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    this.http.post<{ url: string }>('https://common-lions-grab.loca.lt/api/upload-avatar', formData)
+    this.http.post<{ url: string }>('http://localhost:3001/api/upload-avatar', formData)
       .pipe(finalize(() => {
         this.uploadingAvatar = false;
         this.cdr.detectChanges();
@@ -93,6 +95,67 @@ export class PerfilComponent implements OnInit {
       });
   }
 
+  requestPasswordChange() {
+    if (!confirm('¿Estás seguro de que quieres solicitar un cambio de contraseña?')) return;
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.http.post<{ message: string }>('http://localhost:3001/api/request-password-reset', { email: this.user.email })
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: (res) => {
+          this.successMessage = `✅ Hemos enviado un enlace de recuperación a <strong>${this.user.email}</strong>. Revisa tu bandeja de entrada (y spam).`;
+          this.cdr.detectChanges();
+          // No ocultar el mensaje automáticamente para que le de tiempo a leerlo bien
+        },
+        error: (err) => {
+          this.errorMessage = 'Ocurrió un error al enviar el email. Inténtalo de nuevo más tarde.';
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  // --- Funcionalidades Extra "Modernas" ---
+
+  showUserDataModal = false;
+  isDarkMode = false;
+
+  toggleDarkMode(event: any) {
+    const isDark = event.target.checked;
+    this.isDarkMode = isDark;
+    if (isDark) {
+      document.body.classList.add('dark-theme');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }
+
+  downloadData() {
+    this.showUserDataModal = true;
+  }
+
+  closeDataModal() {
+    this.showUserDataModal = false;
+  }
+
+  deleteAccount() {
+    const confirmation = prompt('⚠️ ZONA DE PELIGRO ⚠️\n\nEsta acción eliminará tu cuenta permanentemente.\nPara confirmar, escribe tu nombre de usuario:');
+
+    if (confirmation === this.user.username) {
+      alert('Funcionalidad de borrado simulada. En un entorno real, esto borraría tu cuenta.');
+      // Aquí iría la llamada al backend: this.http.delete(...)
+    } else if (confirmation !== null) {
+      alert('El nombre de usuario no coincide. Acción cancelada.');
+    }
+  }
+
   saveChanges() {
     this.loading = true;
     this.errorMessage = '';
@@ -105,7 +168,7 @@ export class PerfilComponent implements OnInit {
       userToSave.avatar = userToSave.avatar.split('?t=')[0];
     }
 
-    this.http.put<{ message: string, user: UserProfile }>('https://common-lions-grab.loca.lt/api/users/profile', userToSave, { headers })
+    this.http.put<{ message: string, user: UserProfile }>('http://localhost:3001/api/users/profile', userToSave, { headers })
       .pipe(finalize(() => {
         this.loading = false;
         this.cdr.detectChanges();

@@ -39,8 +39,10 @@
 
 .page-header p {
     font-size: 1.2rem;
-    color: var(--text-dark);
-    font-weight: 500;
+    color: #222;
+    /* Darker text for header description */
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .container,
@@ -215,22 +217,27 @@
 }
 
 .news-author {
-    color: var(--text-muted);
+    color: #555;
+    /* Dark gray for author */
+    font-weight: 500;
 }
 
 .news-content h3 {
     font-size: 1.4rem;
-    color: var(--text-dark);
+    color: #111;
+    /* Almost black for title */
     margin-bottom: var(--spacing-sm);
     line-height: 1.3;
 }
 
 .news-excerpt {
-    color: var(--text-muted);
+    color: #333;
+    /* Darker gray for readable text on white */
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -242,68 +249,27 @@
     margin-bottom: var(--spacing-md);
 }
 
-.hashtag {
-    padding: 0.3rem 0.8rem;
-    background: rgba(235, 52, 137, 0.1);
-    color: var(--primary-pink);
-    border-radius: 50px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.news-footer {
-    display: flex;
-    gap: var(--spacing-sm);
-    align-items: center;
-}
-
-.btn-read-more {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.6rem 1.2rem;
-    background: rgba(235, 52, 137, 0.1);
-    color: var(--primary-pink);
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-}
-
-.btn-read-more:hover {
-    background: var(--primary-pink);
-    color: var(--white);
-}
-
-.btn-delete {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.6rem 1.2rem;
-    background: rgba(244, 67, 54, 0.1);
-    color: #d32f2f;
-    border: none;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-left: auto;
-}
-
-.btn-delete:hover {
-    background: #d32f2f;
-    color: var(--white);
-}
+/* ... existing styles ... */
 
 .no-news {
     text-align: center;
     padding: var(--spacing-xl);
+    color: #333;
+    /* Dark text for empty state */
+}
+
+.no-news h3 {
+    color: #111;
+    margin-bottom: 0.5rem;
+}
+
+.no-news p {
+    color: #555;
 }
 
 .no-news svg {
-    stroke: var(--text-muted);
+    stroke: #444;
+    /* Darker icon */
     margin-bottom: var(--spacing-md);
 }
 

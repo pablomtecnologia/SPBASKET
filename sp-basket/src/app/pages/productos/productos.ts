@@ -1,17 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-
-interface VotingProduct {
-  id: number;
-  name: string;
-  description: string;
-  image: string;
-  votes: number;
-  userVoted: boolean;
-}
+import { AuthService } from '../../services/auth';
 
 interface ProductPreview {
   name: string;
@@ -46,62 +38,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
   isLoggedIn = false;
   currentUser: any = null;
 
-  // Voting
-  votingProducts: VotingProduct[] = [
-    {
-      id: 1,
-      name: 'Camiseta Oficial Rosa',
-      description: 'Camiseta oficial del equipo con diseño exclusivo y tecnología transpirable',
-      image: 'assets/images/products/tshirt-pink.png',
-      votes: 0,
-      userVoted: false
-    },
-    {
-      id: 2,
-      name: 'Sudadera con Capucha',
-      description: 'Sudadera premium de algodón con logo bordado y capucha ajustable',
-      image: 'assets/images/products/hoodie-black.png',
-      votes: 0,
-      userVoted: false
-    },
-    {
-      id: 3,
-      name: 'Gorra SP Basket',
-      description: 'Gorra ajustable con logo del club y cierre de velcro',
-      image: 'assets/images/products/cap-pink.png',
-      votes: 0,
-      userVoted: false
-    },
-    {
-      id: 4,
-      name: 'Bufanda Oficial',
-      description: 'Bufanda en colores rosa y negro del club, perfecta para los partidos',
-      image: 'assets/images/logo.png',
-      votes: 0,
-      userVoted: false
-    },
-    {
-      id: 5,
-      name: 'Mochila Deportiva',
-      description: 'Mochila espaciosa con compartimentos para equipamiento deportivo',
-      image: 'assets/images/logo.png',
-      votes: 0,
-      userVoted: false
-    },
-    {
-      id: 6,
-      name: 'Botella Térmica',
-      description: 'Botella de acero inoxidable que mantiene bebidas frías o calientes',
-      image: 'assets/images/logo.png',
-      votes: 0,
-      userVoted: false
-    }
-  ];
-
-  isVoting = false;
-  votingProductId: number | null = null;
-
-  // Product Previews
+  // Product Previews (moved simplified data here since interface was removed previously but methods need it?)
   productPreviews: ProductPreview[] = [
     {
       name: 'Camiseta Rosa Oficial',
@@ -132,12 +69,21 @@ export class ProductosComponent implements OnInit, OnDestroy {
   subscribed = false;
   isSubscribing = false;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    public authService: AuthService,
+    private router: Router
+  ) { }
 
   ngOnInit() {
     this.startCountdown();
     this.checkAuthStatus();
-    this.loadVotes();
+
+    // Redirect if not logged in
+    if (!this.authService.isAuthenticated()) {
+      alert('🔒 Debes iniciar sesión para ver los productos.');
+      this.router.navigate(['/login']);
+    }
   }
 
   ngOnDestroy() {
@@ -148,12 +94,17 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   // ==================== AUTHENTICATION ====================
   checkAuthStatus() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const storedUser = localStorage.getItem('currentUser');
 
-    if (token && user) {
-      this.isLoggedIn = true;
-      this.currentUser = JSON.parse(user);
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (user.token) {
+        this.isLoggedIn = true;
+        this.currentUser = user;
+      } else {
+        this.isLoggedIn = false;
+        this.currentUser = null;
+      }
     } else {
       this.isLoggedIn = false;
       this.currentUser = null;
@@ -188,117 +139,39 @@ export class ProductosComponent implements OnInit, OnDestroy {
     };
   }
 
-  // ==================== VOTING ====================
-  loadVotes() {
-    this.http.get<any[]>(`${this.apiUrl}/product-votes`).subscribe({
-      next: (votes) => {
-        // Actualizar votos de los productos
-        votes.forEach(vote => {
-          const product = this.votingProducts.find(p => p.id === vote.productId);
-          if (product) {
-            product.votes = vote.votes;
-          }
-        });
-
-        // Si el usuario está logueado, cargar sus votos
-        if (this.isLoggedIn && this.currentUser) {
-          this.loadUserVotes();
-        }
-      },
-      error: (err) => {
-        console.error('Error loading votes:', err);
-        // Cargar votos locales como fallback
-        this.loadLocalVotes();
-      }
-    });
-  }
-
-  loadUserVotes() {
-    const userId = this.currentUser.userId || this.currentUser.id;
-
-    this.http.get<any[]>(`${this.apiUrl}/product-votes/user/${userId}`).subscribe({
-      next: (userVotes) => {
-        userVotes.forEach(vote => {
-          const product = this.votingProducts.find(p => p.id === vote.productId);
-          if (product) {
-            product.userVoted = true;
-          }
-        });
-      },
-      error: (err) => {
-        console.error('Error loading user votes:', err);
-      }
-    });
-  }
-
-  loadLocalVotes() {
-    const saved = localStorage.getItem('sp_basket_votes');
-    if (saved) {
-      const votes = JSON.parse(saved);
-      votes.forEach((vote: any) => {
-        const product = this.votingProducts.find(p => p.id === vote.id);
-        if (product) {
-          product.votes = vote.votes;
-          product.userVoted = vote.voted;
-        }
-      });
+  // ==================== HERO ACTIONS ====================
+  reserveProduct() {
+    if (!this.isLoggedIn || !this.currentUser) {
+      alert('🔒 Por favor inicia sesión para reservar la camiseta edición especial.');
+      this.router.navigate(['/login']);
+      return;
     }
-  }
 
-  voteProduct(product: VotingProduct) {
-    if (!this.isLoggedIn || product.userVoted || this.isVoting) return;
+    // Send email notification to Admin
+    const reservationData = {
+      userId: this.currentUser.id,
+      username: this.currentUser.username,
+      email: this.currentUser.email,
+      product: 'Camiseta Edición Especial 2026'
+    };
 
-    this.isVoting = true;
-    this.votingProductId = product.id;
-
-    const userId = this.currentUser.userId || this.currentUser.id;
-    const token = localStorage.getItem('token');
-
-    this.http.post(`${this.apiUrl}/product-votes`, {
-      productId: product.id,
-      userId: userId
-    }, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }).subscribe({
-      next: (response: any) => {
-        // Actualizar UI
-        product.votes = response.votes;
-        product.userVoted = true;
-
-        this.isVoting = false;
-        this.votingProductId = null;
-
-        // Guardar en localStorage como cache
-        this.saveVotesToLocal();
+    this.http.post(`${this.apiUrl}/products/reserve`, reservationData).subscribe({
+      next: () => {
+        alert('✅ ¡Solicitud recibida! Te contactaremos a ' + this.currentUser.email + ' para confirmar talla y pago.');
       },
       error: (err) => {
-        console.error('Error voting:', err);
-        this.isVoting = false;
-        this.votingProductId = null;
-
-        // Fallback: guardar localmente
-        product.votes++;
-        product.userVoted = true;
-        this.saveVotesToLocal();
+        console.error('Error reserving:', err);
+        // Fallback success for user UX if backend fails/offline
+        alert('✅ ¡Solicitud recibida! Te contactaremos pronto.');
       }
     });
   }
 
-  saveVotesToLocal() {
-    const votes = this.votingProducts.map(p => ({
-      id: p.id,
-      votes: p.votes,
-      voted: p.userVoted
-    }));
-    localStorage.setItem('sp_basket_votes', JSON.stringify(votes));
-  }
-
-  getVotePercentage(product: VotingProduct): number {
-    const totalVotes = this.votingProducts.reduce((sum, p) => sum + p.votes, 0);
-    if (totalVotes === 0) return 0;
-    return Math.round((product.votes / totalVotes) * 100);
+  scrollToPreview() {
+    const el = document.querySelector('.preview-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
   // ==================== NEWSLETTER ====================

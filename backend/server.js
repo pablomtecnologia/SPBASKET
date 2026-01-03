@@ -107,9 +107,9 @@ const upload = uploadNoticias;
 
 // ---------- MIDDLEWARE ----------
 app.use(cors({
-    origin: ['http://localhost:4200', 'http://localhost:4201'], // Permitir ambos puertos de desarrollo
+    origin: ['http://localhost:4200', 'http://localhost:4201', 'http://localhost:3001'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder'],
     credentials: true
 }));
 app.use(express.json());
@@ -324,58 +324,88 @@ app.post('/api/register', async (req, res) => {
 });
 
 // ---- RECUPERAR CONTRASEÑA ----
-app.post('/api/forgot-password', async (req, res) => {
+app.post('/api/request-password-reset', async (req, res) => {
     const { email } = req.body;
+    console.log(`🔐 Solicitud cambio password para: ${email}`);
 
     try {
-        // 1. Buscar usuario
         const [rows] = await pool.execute('SELECT id, nombre, username FROM users WHERE email = ?', [email]);
 
         if (rows.length === 0) {
-            // Por seguridad, no decimos si existe o no, pero simulamos éxito
-            return res.json({ message: 'Si el email existe, se enviará una nueva contraseña.' });
+            return res.json({ message: 'Si el email existe, recibirás instrucciones.' });
         }
 
         const user = rows[0];
 
-        // 2. Generar nueva contraseña aleatoria
-        const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-2); // Ej: "a7x9b2m199"
+        const crypto = require('crypto');
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 3600000); // 1 hora
 
-        // 3. Encriptar y guardar
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(newPassword, salt);
+        await pool.execute(
+            'UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?',
+            [token, expires, user.id]
+        );
 
-        await pool.execute('UPDATE users SET password = ? WHERE id = ?', [hash, user.id]);
-
-        // 4. Enviar email
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
         });
 
+        // NOTA: Ajustar URL para prod si es necesario
+        const resetUrl = `http://localhost:4200/reset-password?token=${token}`;
+
         await transporter.sendMail({
-            from: process.env.SMTP_USER,
+            from: `"SP Basket" <${process.env.SMTP_USER}>`,
             to: email,
-            subject: '🔐 Recuperación de Contraseña - SP Basket',
+            subject: '🔐 Cambio de Contraseña - SP Basket',
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                    <h2 style="color: #CC26D5;">Recuperación de Contraseña</h2>
+                    <h2 style="color: #CC26D5;">Cambio de Contraseña</h2>
                     <p>Hola ${user.nombre},</p>
-                    <p>Has solicitado recuperar tu contraseña. Aquí tienes una nueva contraseña temporal:</p>
-                    <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; font-size: 20px; font-weight: bold; text-align: center; letter-spacing: 2px;">
-                        ${newPassword}
+                    <p>Has solicitado cambiar tu contraseña.</p>
+                    <p>Haz clic abajo para crear una nueva:</p>
+                    <div style="margin: 20px 0;">
+                        <a href="${resetUrl}" style="background-color: #CC26D5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Restablecer Contraseña</a>
                     </div>
-                    <p>Por favor, inicia sesión y cámbiala lo antes posible.</p>
                 </div>
             `
         });
 
-        console.log(`✅ Contraseña reseteada para ${user.username}`);
-        res.json({ message: 'Si el email existe, se enviará una nueva contraseña.' });
+        res.json({ message: 'Email de confirmación enviado. Revisa tu correo.' });
 
     } catch (err) {
-        console.error('Error password reset:', err);
-        res.status(500).json({ message: 'Error al procesar solicitud' });
+        console.error('Error request password reset:', err);
+        res.status(500).json({ message: 'Error procesando solicitud' });
+    }
+});
+
+app.post('/api/confirm-password-reset', async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    try {
+        const [rows] = await pool.execute(
+            'SELECT id FROM users WHERE reset_token = ? AND reset_expires > NOW()',
+            [token]
+        );
+
+        if (rows.length === 0) {
+            return res.status(400).json({ message: 'Token inválido o expirado' });
+        }
+
+        const user = rows[0];
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(newPassword, salt);
+
+        await pool.execute(
+            'UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?',
+            [hash, user.id]
+        );
+
+        res.json({ message: 'Contraseña actualizada correctamente' });
+
+    } catch (err) {
+        console.error('Error confirm password reset:', err);
+        res.status(500).json({ message: 'Error actualizando contraseña' });
     }
 });
 
@@ -1256,6 +1286,59 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
     } catch (error) {
         console.error('❌ Error en suscripción:', error);
         res.status(500).json({ message: 'Error al procesar la suscripción' });
+    }
+});
+
+// ---- RESERVAR PRODUCTO (EMAIL) ----
+app.post('/api/products/reserve', verifyToken, async (req, res) => {
+    const { userId, username, email, product } = req.body;
+    console.log(`👕 Reserva de producto: ${product} por ${username} (${email})`);
+
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        });
+
+        // Enviar email al administrador
+        await transporter.sendMail({
+            from: process.env.SMTP_USER,
+            to: 'pablomtecnologia@gmail.com',
+            subject: '👕 Nueva Reserva de Camiseta - SP Basket',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: #E91E63;">Nueva Reserva de Camiseta</h2>
+                    <p><strong>Usuario:</strong> ${username}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Producto:</strong> ${product}</p>
+                    <p><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>
+                    <hr>
+                    <p>Por favor contactar con el usuario para confirmar talla y gestionar el pago.</p>
+                </div>
+            `
+        });
+
+        // Enviar confirmación al usuario
+        await transporter.sendMail({
+            from: process.env.SMTP_USER,
+            to: email,
+            subject: '✅ Solicitud de Reserva Recibida - SP Basket',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: #E91E63;">¡Solicitud Recibida!</h2>
+                    <p>Hola ${username},</p>
+                    <p>Hemos recibido tu solicitud de reserva para: <strong>${product}</strong>.</p>
+                    <p>Nos pondremos en contacto contigo en este correo para confirmar tallas y finalizar el proceso.</p>
+                    <p>¡Gracias por tu apoyo!</p>
+                </div>
+            `
+        });
+
+        res.json({ message: 'Reserva enviada correctamente' });
+
+    } catch (error) {
+        console.error('❌ Error enviando reserva:', error);
+        res.status(500).json({ message: 'Error al procesar la reserva' });
     }
 });
 

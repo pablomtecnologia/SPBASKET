@@ -1,5 +1,6 @@
 .login-page {
-    height: 100vh;
+    min-height: 100vh;
+    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -7,7 +8,7 @@
     background-size: cover;
     background-position: center;
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden; -- Remove hidden to allow scroll if needed, specifically for vertically small screens */
     font-family: 'Poppins', sans-serif;
 }
 

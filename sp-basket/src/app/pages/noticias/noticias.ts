@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface Noticia {
   id: number;
@@ -32,6 +33,7 @@ export class NoticiasComponent implements OnInit {
   loading = true;
   showModal = false;
   showPreview = false;
+  apiUrl = environment.apiUrl;
 
   nuevaNoticia = {
     titulo: '',
@@ -92,7 +94,7 @@ export class NoticiasComponent implements OnInit {
   loadNoticias() {
     this.loading = true;
     this.errorMessage = '';
-    this.http.get<Noticia[]>('https://common-lions-grab.loca.lt/api/noticias').subscribe({
+    this.http.get<Noticia[]>(`${this.apiUrl}/noticias`).subscribe({
       next: (data) => {
         this.noticias = data;
         this.loading = false;
@@ -193,7 +195,7 @@ export class NoticiasComponent implements OnInit {
 
     const headers = this.authService.getAuthHeaders();
 
-    this.http.post<any>('https://common-lions-grab.loca.lt/api/upload-image', formData, {
+    this.http.post<any>(`${this.apiUrl}/upload-image`, formData, {
       headers,
       reportProgress: true,
       observe: 'events'
@@ -230,7 +232,7 @@ export class NoticiasComponent implements OnInit {
       slug: this.generateSlug()
     };
 
-    this.http.post<any>('https://common-lions-grab.loca.lt/api/noticias', noticiaData, { headers }).subscribe({
+    this.http.post<any>(`${this.apiUrl}/noticias`, noticiaData, { headers }).subscribe({
       next: (response) => {
         this.loadNoticias();
         this.closeModal();
@@ -253,7 +255,7 @@ export class NoticiasComponent implements OnInit {
 
     const headers = this.authService.getAuthHeaders();
 
-    this.http.delete(`https://common-lions-grab.loca.lt/api/noticias/${id}`, { headers }).subscribe({
+    this.http.delete(`${this.apiUrl}/noticias/${id}`, { headers }).subscribe({
       next: () => {
         this.successMessage = 'Noticia eliminada correctamente';
         this.errorMessage = '';

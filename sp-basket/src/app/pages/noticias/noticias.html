@@ -40,7 +40,7 @@
                             <span class="news-author" *ngIf="noticia.autor">Por {{ noticia.autor }}</span>
                         </div>
                         <h3>{{ noticia.titulo }}</h3>
-                        <p class="news-excerpt">{{ noticia.contenido }}</p>
+                        <div class="news-excerpt" [innerHTML]="noticia.contenido"></div>
                         <div class="news-hashtags" *ngIf="noticia.hashtags">
                             <span class="hashtag" *ngFor="let tag of parseHashtags(noticia.hashtags)">{{ tag }}</span>
                         </div>

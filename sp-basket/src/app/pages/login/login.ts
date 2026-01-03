@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CommonModule } from '@angular/common';
@@ -20,7 +20,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -43,16 +44,18 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.username, this.password).subscribe({
       next: (success) => {
         this.loading = false;
-        if (success) {
-          this.router.navigateByUrl(this.returnUrl);
-        } else {
-          this.errorMessage = 'Usuario o contraseña incorrectos.';
-        }
+        this.router.navigateByUrl(this.returnUrl);
       },
       error: (err) => {
         this.loading = false;
         console.error('Login component error:', err);
-        this.errorMessage = 'Error de conexión al servidor.';
+        if (err.status === 401) {
+          this.errorMessage = 'Usuario o contraseña incorrectos.';
+          this.password = ''; // Limpiar password para reintentar
+        } else {
+          this.errorMessage = 'Error de conexión al servidor (Status: ' + err.status + ')';
+        }
+        this.cdr.detectChanges();
       }
     });
   }

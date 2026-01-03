@@ -1,0 +1,30 @@
+/* Global CSS */
+body.dark-theme {
+    background-color: #121212;
+    color: #eeeeee;
+}
+
+body.dark-theme .perfil-card,
+body.dark-theme .auth-card {
+    background: #1e1e1e;
+    color: #eee;
+}
+
+body.dark-theme input {
+    background: #2d2d2d;
+    border-color: #444;
+    color: #eee;
+}
+
+body.dark-theme .setting-item {
+    background: #2d2d2d;
+}
+
+body.dark-theme .setting-label {
+    color: #eee;
+}
+
+body.dark-theme .account-actions p {
+    color: #aaa !important;
+    /* Force override style attribute */
+}
