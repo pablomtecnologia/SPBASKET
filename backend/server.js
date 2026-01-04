@@ -463,9 +463,11 @@ app.get('/', (req, res) => {
     res.send('🏀 SP BASKET API - RUNNING ON POSTGRESQL');
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+// Eliminamos app.listen de aquí (línea 466 aprox)
+// (Espacio reservado para limpieza)
+
+// ... (Resto del fichero sigue igual hasta el final)
+
 
 
 // ========== PAPELETAS ==========
