@@ -107,7 +107,13 @@ const upload = uploadNoticias;
 
 // ---------- MIDDLEWARE ----------
 app.use(cors({
-    origin: ['http://localhost:4200', 'http://localhost:4201', 'http://localhost:3001'],
+    origin: [
+        'http://localhost:4200',
+        'http://localhost:4201',
+        'http://localhost:3001',
+        'https://saskipenguins.es',
+        'https://www.saskipenguins.es'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder'],
     credentials: true

@@ -20,6 +20,10 @@ interface Countdown {
   seconds: number;
 }
 
+import { environment } from '../../../environments/environment';
+
+// ...
+
 @Component({
   selector: 'app-productos',
   imports: [CommonModule, FormsModule, RouterLink],
@@ -27,7 +31,7 @@ interface Countdown {
   styleUrls: ['./productos.css']
 })
 export class ProductosComponent implements OnInit, OnDestroy {
-  private apiUrl = 'http://localhost:3001/api';
+  private apiUrl = environment.apiUrl;
 
   // Countdown
   countdown: Countdown = { days: 0, hours: 0, minutes: 0, seconds: 0 };
