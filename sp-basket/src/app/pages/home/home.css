@@ -163,8 +163,8 @@
     }
 
     100% {
-        /* Actualizado para 8 patrocinadores en lugar de 12 */
-        transform: translateX(calc(-350px * 8 - var(--spacing-xl) * 8));
+        /* Actualizado para 10 patrocinadores */
+        transform: translateX(calc(-350px * 10 - var(--spacing-xl) * 10));
     }
 }
 
@@ -336,8 +336,8 @@
         }
 
         100% {
-            /* Actualizado para móvil con 8 patrocinadores */
-            transform: translateX(calc(-400px * 8 - var(--spacing-xl) * 8));
+            /* Actualizado para móvil con 10 patrocinadores */
+            transform: translateX(calc(-400px * 10 - var(--spacing-xl) * 10));
         }
     }
 
