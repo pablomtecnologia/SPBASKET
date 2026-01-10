@@ -21,9 +21,12 @@ import { PioneersComponent } from './pages/pioneers/pioneers';
 import { PagosComponent } from './pages/pagos/pagos';
 import { HistorialComponent } from './pages/historial/historial';
 
+import { FanZoneComponent } from './pages/fan-zone/fan-zone';
+
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'fan-zone', component: FanZoneComponent }, // Nueva ruta ZONA FAN
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },

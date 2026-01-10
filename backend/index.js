@@ -143,7 +143,51 @@ const pool = new Pool({
                 id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255) UNIQUE, subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`);
 
+            await client.query(`CREATE TABLE IF NOT EXISTS scores (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                game VARCHAR(50) NOT NULL, -- 'hoops', 'memory'
+                score INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`);
+
             console.log('✅ Todas las tablas verificadas.');
+            // ... (inside ROUTES) ...
+            app.get('/api/noticias/:id', async (req, res) => {
+                try {
+                    const { rows } = await pool.query('SELECT * FROM noticias WHERE id = $1', [req.params.id]);
+                    if (rows.length === 0) return res.status(404).json({ message: 'No found' });
+                    res.json(rows[0]);
+                } catch (e) { res.status(500).json({ message: 'Error noticia' }); }
+            });
+
+            // --- SCORES & RANKINGS ---
+            app.post('/api/scores', verifyToken, async (req, res) => {
+                const { game, score } = req.body;
+                const userId = req.user.sub;
+                try {
+                    await pool.query('INSERT INTO scores (user_id, game, score) VALUES ($1, $2, $3)', [userId, game, score]);
+                    res.json({ message: 'Puntuación guardada' });
+                } catch (e) { console.error(e); res.status(500).json({ message: 'Error saving score' }); }
+            });
+
+            app.get('/api/rankings', async (req, res) => {
+                const { game } = req.query;
+                try {
+                    // Top 10 del mes actual
+                    const { rows } = await pool.query(`
+            SELECT u.username, u.avatar, MAX(s.score) as best_score
+            FROM scores s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.game = $1 AND s.created_at >= date_trunc('month', CURRENT_DATE)
+            GROUP BY u.id
+            ORDER BY best_score DESC
+            LIMIT 10
+        `, [game || 'hoops']);
+                    res.json(rows);
+                } catch (e) { console.error(e); res.status(500).json({ message: 'Error rankings' }); }
+            });
 
             // ADMIN USER
             const pass = bcrypt.hashSync('spbasket2024', 10);
