@@ -3,86 +3,101 @@
         <h1 class="text-center section-title fade-in-up">ZONA FAN SP BASKET</h1>
         <p class="text-center mb-5 fade-in-up">¡Demuestra tu pasión y habilidad! Juega, compite y diviértete.</p>
 
-        <div class="games-grid">
+        <!-- AUTH CHECK -->
+        <div *ngIf="!isLoggedIn" class="locked-overlay fade-in">
+            <div class="lock-content">
+                <span class="lock-icon">🔒</span>
+                <h2>Acceso Exclusivo</h2>
+                <p>Para jugar, guardar puntuaciones y aparecer en el ranking, necesitas iniciar sesión.</p>
+                <a routerLink="/login" class="btn btn-primary btn-lg mt-3">INICIAR SESIÓN / REGISTRARSE</a>
+            </div>
+        </div>
 
-            <!-- GAME 1: TRIPLE DECISIVO -->
-            <div class="game-card fade-in-left">
-                <div class="game-header">
-                    <span class="game-icon">🏀</span>
-                    <h2>El Triple Decisivo</h2>
-                </div>
-                <div class="game-body">
-                    <div class="score-board">
-                        <div class="score-item">
-                            <span>Racha Actual</span>
-                            <strong>{{ score }}</strong>
-                        </div>
-                        <div class="score-item">
-                            <span>Récord</span>
-                            <strong class="text-gold">{{ highScore }}</strong>
-                        </div>
-                    </div>
+        <div class="fan-dashboard" [class.blurred]="!isLoggedIn">
 
-                    <div class="hoop-container">
-                        <div class="backboard">
-                            <div class="hoop-net"></div>
-                            <div class="ball-animation" *ngIf="lastShotResult === 'success'">🏀</div>
-                            <div class="brick-animation" *ngIf="lastShotResult === 'fail'">🧱</div>
-                        </div>
-                    </div>
-
-                    <div class="shot-meter-container">
-                        <div class="shot-meter">
-                            <div class="zone success-zone"></div>
-                            <div class="cursor" [style.left.%]="cursorPosition"></div>
-                        </div>
-                    </div>
-
-                    <p class="game-message" [class.success]="lastShotResult === 'success'"
-                        [class.fail]="lastShotResult === 'fail'">
-                        {{ message }}
-                    </p>
-
-                    <button class="btn btn-primary shot-btn pulse" (click)="shoot()">
-                        {{ gameActive ? '¡LANZAR!' : 'JUGAR' }}
-                    </button>
-                </div>
+            <!-- TABS -->
+            <div class="game-tabs mb-4">
+                <button class="tab-btn" [class.active]="activeTab === 'hoops'" (click)="setActiveTab('hoops')">
+                    🏀 Super Hoops
+                </button>
+                <button class="tab-btn" [class.active]="activeTab === 'memory'" (click)="setActiveTab('memory')">
+                    🧠 SP Memory
+                </button>
             </div>
 
-            <!-- GAME 2: MEMORY -->
-            <div class="game-card fade-in-right">
-                <div class="game-header">
-                    <span class="game-icon">🧠</span>
-                    <h2>SP Memory</h2>
-                </div>
-                <div class="game-body">
-                    <div class="memory-stats">
-                        <span>Movimientos: <strong>{{ moves }}</strong></span>
-                        <button class="btn btn-outline-sm" (click)="resetMemoryGame()">🔄 Reiniciar</button>
+            <div class="main-layout grid-layout">
+
+                <!-- GAME AREA -->
+                <div class="game-area">
+
+                    <!-- HOOPS GAME -->
+                    <div *ngIf="activeTab === 'hoops'" class="game-container hoops-container">
+                        <div class="game-info-bar">
+                            <span>Racha: <strong class="text-neon">{{ scoreHoops }}</strong></span>
+                            <span>{{ messageHoops }}</span>
+                        </div>
+
+                        <!-- Canvas Game -->
+                        <div class="canvas-wrapper">
+                            <canvas #hoopsCanvas width="300" height="400"></canvas>
+                            <div class="instructions-overlay" *ngIf="!ball.isDragging && !ball.isThrown">
+                                <small>Haz click abajo y lanza</small>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block shoot-trigger" (click)="shootSimple()">¡LANZAR
+                            AHORA!</button>
                     </div>
 
-                    <div class="memory-grid" *ngIf="!memoryGameWon; else winnerValues">
-                        <div class="memory-card" *ngFor="let card of cards"
-                            [class.flipped]="card.flipped || card.matched" (click)="flipCard(card)">
-                            <div class="card-inner">
-                                <div class="card-front">
-                                    <img src="assets/images/logo-sp-pink.png" alt="SP" class="card-logo">
-                                </div>
-                                <div class="card-back">
-                                    {{ card.icon }}
+                    <!-- MEMORY GAME -->
+                    <div *ngIf="activeTab === 'memory'" class="game-container memory-container">
+                        <div class="game-info-bar">
+                            <span>Movimientos: <strong>{{ moves }}</strong></span>
+                            <button class="btn btn-sm btn-outline-light" (click)="resetMemoryGame()">Reset</button>
+                        </div>
+
+                        <div class="memory-grid mb-3" *ngIf="!memoryGameWon; else winner">
+                            <div class="memory-card" *ngFor="let card of cards"
+                                [class.flipped]="card.flipped || card.matched" (click)="flipCard(card)">
+                                <div class="card-inner">
+                                    <div class="card-front">
+                                        <img src="assets/images/logo-sp-pink.png" alt="SP" class="card-logo">
+                                    </div>
+                                    <div class="card-back">{{ card.icon }}</div>
                                 </div>
                             </div>
                         </div>
+
+                        <ng-template #winner>
+                            <div class="winner-box text-center fade-in">
+                                <h3>🎉 ¡VICTORIA! 🎉</h3>
+                                <p>Has completado el juego en {{ moves }} movimientos.</p>
+                                <p class="text-neon">Puntuación guardada</p>
+                                <button class="btn btn-primary" (click)="resetMemoryGame()">Jugar Otra Vez</button>
+                            </div>
+                        </ng-template>
                     </div>
 
-                    <ng-template #winnerValues>
-                        <div class="winner-message text-center fade-in">
-                            <h3>¡ENHORABUENA! 🎉</h3>
-                            <p>Completado en {{ moves }} movimientos</p>
-                            <button class="btn btn-primary mt-3" (click)="resetMemoryGame()">Jugar de nuevo</button>
-                        </div>
-                    </ng-template>
                 </div>
+
+                <!-- RANKING SIDEBAR -->
+                <div class="ranking-area">
+                    <h3 class="ranking-title">🏆 Top Jugadores (Mes)</h3>
+                    <div class="ranking-list">
+                        <div class="ranking-item" *ngFor="let r of rankings; let i = index">
+                            <span class="rank-num" [class.top-3]="i < 3">#{{ i + 1 }}</span>
+                            <img [src]="r.avatar || 'assets/images/default-avatar.png'" alt="Av" class="rank-avatar">
+                            <div class="rank-info">
+                                <span class="rank-user">{{ r.username }}</span>
+                                <span class="rank-score">{{ r.best_score }} pts</span>
+                            </div>
+                        </div>
+                        <div *ngIf="rankings.length === 0" class="text-center p-3 text-muted">
+                            ¡Sé el primero en el ranking!
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
