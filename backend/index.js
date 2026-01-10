@@ -146,8 +146,28 @@ const pool = new Pool({
             await client.query(`CREATE TABLE IF NOT EXISTS scores (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL,
-                game VARCHAR(50) NOT NULL, -- 'hoops', 'memory'
+                game VARCHAR(50) NOT NULL, -- 'hoops', 'memory', 'runner'
                 score INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`);
+
+            await client.query(`CREATE TABLE IF NOT EXISTS mvp_votes (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                player_name VARCHAR(100) NOT NULL,
+                match_id VARCHAR(50), -- Optional for specific match
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, match_id), -- One vote per match per user
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`);
+
+            await client.query(`CREATE TABLE IF NOT EXISTS quinielas (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                match_id VARCHAR(50) NOT NULL,
+                home_score INTEGER NOT NULL,
+                visitor_score INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )`);
@@ -160,6 +180,56 @@ const pool = new Pool({
                     if (rows.length === 0) return res.status(404).json({ message: 'No found' });
                     res.json(rows[0]);
                 } catch (e) { res.status(500).json({ message: 'Error noticia' }); }
+            });
+
+            // --- FAN ZONE ENDPOINTS ---
+
+            // MVP
+            app.get('/api/mvp-candidates', async (req, res) => {
+                // Mock data for now as we don't have a 'players' table linked to matches yet
+                // In a real scenario, this would query the roster of the last match
+                const candidates = [
+                    { id: 1, name: 'Laura Gómez', team: 'SP Rosa', avatar: 'https://i.pravatar.cc/150?u=laura' },
+                    { id: 2, name: 'Elena Ruiz', team: 'SP Rosa', avatar: 'https://i.pravatar.cc/150?u=elena' },
+                    { id: 3, name: 'Marc Pérez', team: 'SP Negro', avatar: 'https://i.pravatar.cc/150?u=marc' },
+                    { id: 4, name: 'Alex T.', team: 'SP Negro', avatar: 'https://i.pravatar.cc/150?u=alex' },
+                    { id: 5, name: 'Lucía F.', team: 'SP Rosa', avatar: 'https://i.pravatar.cc/150?u=lucia' }
+                ];
+                res.json(candidates);
+            });
+
+            app.post('/api/mvp-vote', verifyToken, async (req, res) => {
+                const { player_name } = req.body;
+                const userId = req.user.sub;
+                try {
+                    await pool.query('INSERT INTO mvp_votes (user_id, player_name, match_id) VALUES ($1, $2, $3) ON CONFLICT (user_id, match_id) DO UPDATE SET player_name = $2',
+                        [userId, player_name, 'current_week']);
+                    res.json({ message: 'Voto registrado' });
+                } catch (e) { console.error(e); res.status(500).json({ message: 'Error voting' }); }
+            });
+
+            app.get('/api/mvp-results', async (req, res) => {
+                try {
+                    const { rows } = await pool.query(`
+            SELECT player_name, COUNT(*) as votes 
+            FROM mvp_votes 
+            WHERE match_id = 'current_week' 
+            GROUP BY player_name 
+            ORDER BY votes DESC
+        `);
+                    res.json(rows);
+                } catch (e) { res.status(500).json({ message: 'Error results' }); }
+            });
+
+            // QUINIELA
+            app.post('/api/quiniela', verifyToken, async (req, res) => {
+                const { match_id, home, visitor } = req.body;
+                const userId = req.user.sub;
+                try {
+                    await pool.query('INSERT INTO quinielas (user_id, match_id, home_score, visitor_score) VALUES ($1, $2, $3, $4)',
+                        [userId, match_id, home, visitor]);
+                    res.json({ message: 'Quiniela guardada' });
+                } catch (e) { console.error(e); res.status(500).json({ message: 'Error quiniela' }); }
             });
 
             // --- SCORES & RANKINGS ---

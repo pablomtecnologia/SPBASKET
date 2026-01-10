@@ -1,10 +1,10 @@
 import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth.service';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
 import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms'; // Importante para Quiniela
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth';
+import { environment } from '../../../environments/environment';
 
 interface RunnerPlayer {
   x: number;

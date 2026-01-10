@@ -3,7 +3,8 @@
         <h1 class="text-center section-title fade-in-up">ZONA FAN SP BASKET</h1>
         <p class="text-center mb-5 fade-in-up">Tu espacio exclusivo. Juega, participa y gana.</p>
 
-        <!-- AUTH LOCK -->
+        <!-- AUTH LOCK (DISABLED TEMPORARILY) -->
+        <!-- 
         <div *ngIf="!isLoggedIn" class="locked-overlay fade-in">
             <div class="lock-content">
                 <span class="lock-icon">🔒</span>
@@ -12,8 +13,9 @@
                 <a routerLink="/login" class="btn btn-primary btn-lg mt-3">ENTRAR AL CLUB</a>
             </div>
         </div>
+        -->
 
-        <div class="fan-dashboard" [class.blurred]="!isLoggedIn">
+        <div class="fan-dashboard">
 
             <!-- LAYOUT GRID -->
             <div class="dashboard-grid">
