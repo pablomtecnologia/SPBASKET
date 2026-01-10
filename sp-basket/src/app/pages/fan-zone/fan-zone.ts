@@ -50,11 +50,66 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   imagesLoaded = false;
 
   // --- QUINIELA ---
-  prediction = { home: null, visitor: null };
-  predictionSubmitted = false;
+  quinielas = [
+    {
+      id: 'rosa-match',
+      competition: '1ª Div. Nacional',
+      home: 'SP Rosa',
+      visitor: 'AMIDE',
+      date: 'Dom 18 Ene, 16:30',
+      logoHome: 'assets/images/logo-sp-pink.png',
+      logoVisitor: 'assets/images/comp-rosa-new.jpg',
+      prediction: { home: null, visitor: null },
+      submitted: false
+    },
+    {
+      id: 'negro-match',
+      competition: '2ª Div. Autonómica',
+      home: 'Intermodal Sea Solutions',
+      visitor: 'SP Negro',
+      date: 'Sab 17 Ene, 18:30',
+      logoHome: 'assets/images/comp-negro-new.jpg',
+      logoVisitor: 'assets/images/logo-sp-pink.png',
+      prediction: { home: null, visitor: null },
+      submitted: false
+    }
+  ];
 
   // --- ENCUESTA MVP ---
-  mvpCandidates: any[] = [];
+  // Inicializamos DIRECTAMENTE con los datos para evitar "Cargando..."
+  mvpCandidates: any[] = [
+    // --- SP NEGRO ---
+    { id: 31, name: 'Jesús Antonio Jiménez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/31.png' },
+    { id: 32, name: 'Ángel Marcelo Fernández', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/32.png' },
+    { id: 33, name: 'Pergentino Edjang', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/33.png' },
+    { id: 37, name: 'Daniel Puente', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/37.png' },
+    { id: 38, name: 'Héctor San Miguel', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/38.png' },
+    { id: 39, name: 'Hugo Piñeiro', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/39.png' },
+    { id: 40, name: 'Samuel Benito', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/40.png' },
+    { id: 41, name: 'Iván Abascal', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/41.png' },
+    { id: 42, name: 'Diego Gutiérrez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/42.png' },
+    { id: 43, name: 'Pablo Martínez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/43.png' },
+    { id: 44, name: 'Rodrigo Oxinalde', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/44.png' },
+    { id: 45, name: 'Ricardo Fraguas', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/45.png' },
+    { id: 46, name: 'José Pacho', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/46.png' },
+    { id: 47, name: 'Hugo Michelena', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/47.png' },
+    { id: 48, name: 'Juan Verde', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/48.png' },
+    { id: 49, name: 'Mario Álvarez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/49.png' },
+    { id: 50, name: 'Pablo Elizalde', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/50.png' },
+    // --- SP ROSA ---
+    { id: 27, name: 'Diego Alonso', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/27.png' },
+    { id: 28, name: 'Adrián Cossío', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/28.png' },
+    { id: 29, name: 'Rubén Roiz', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/29.png' },
+    { id: 30, name: 'John James Riascos', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/30.png' },
+    { id: 131, name: 'Jesús Jiménez', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/31.png' },
+    { id: 132, name: 'Ángel M. Fernández', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/32.png' },
+    { id: 133, name: 'Pergentino Edjang', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/33.png' },
+    { id: 34, name: 'Daniel García', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/34.png' },
+    { id: 35, name: 'Diego Fernández', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/35.png' },
+    { id: 36, name: 'Diego Amayuelas', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/36.png' },
+    { id: 998, name: 'Javier Martínez', team: 'SP Rosa', avatar: 'assets/images/logo-sp-pink.png' },
+    { id: 999, name: 'Gaël Fournet', team: 'SP Rosa', avatar: 'assets/images/logo-sp-pink.png' }
+  ];
   selectedMvp: string = '';
   mvpVoted = false;
   mvpResults: any[] = [];
@@ -160,16 +215,16 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // --- QUINIELA ---
-  submitQuiniela() {
+  submitQuiniela(q: any) {
     if (!this.isLoggedIn) { alert('Debes iniciar sesión para participar'); return; }
-    if (this.prediction.home === null || this.prediction.visitor === null) return;
+    if (q.prediction.home === null || q.prediction.visitor === null) return;
 
     this.http.post(`${environment.apiUrl}/api/quiniela`, {
-      match_id: 'sp_negro_vs_sp_rosa', // Partido Real
-      home: this.prediction.home,
-      visitor: this.prediction.visitor
+      match_id: q.id,
+      home: q.prediction.home,
+      visitor: q.prediction.visitor
     }).subscribe({
-      next: () => { this.predictionSubmitted = true; alert('¡Pronóstico enviado!'); },
+      next: () => { q.submitted = true; alert('¡Pronóstico enviado!'); },
       error: () => alert('Error al enviar pronóstico')
     });
   }
