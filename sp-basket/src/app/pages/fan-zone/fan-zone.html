@@ -50,11 +50,11 @@
                         <h3>La Quiniela</h3>
                     </div>
                     <div class="widget-body">
-                        <p class="text-muted mb-3">Predice el resultado del próximo partido:</p>
+                        <p class="text-muted mb-3">Predice el partido: <strong>SP Basket vs Leones</strong></p>
                         <div class="match-prediction">
                             <div class="team">
                                 <img src="assets/images/logo-sp-pink.png" alt="SP" class="mini-logo">
-                                <span>SP Basket</span>
+                                <span>SP</span>
                                 <input type="number" [(ngModel)]="prediction.home" [disabled]="predictionSubmitted"
                                     class="score-input">
                             </div>
@@ -69,7 +69,7 @@
                         <button *ngIf="!predictionSubmitted" class="btn btn-outline-primary btn-block mt-3"
                             (click)="submitQuiniela()">Enviar Pronóstico</button>
                         <div *ngIf="predictionSubmitted" class="success-msg mt-3 fade-in">
-                            ✅ ¡Pronóstico guardado! Suerte.
+                            ✅ ¡Pronóstico guardado!
                         </div>
                     </div>
                 </div>
@@ -82,40 +82,78 @@
                     </div>
                     <div class="widget-body">
                         <div *ngIf="!mvpVoted">
-                            <p class="mb-3">¿Quién ha sido el mejor jugador?</p>
+                            <p class="mb-3">¿Quién fue el mejor jugador?</p>
                             <div class="poll-options">
-                                <label *ngFor="let opt of mvpOptions" class="poll-option">
-                                    <input type="radio" name="mvp" [value]="opt" [(ngModel)]="selectedMvp">
-                                    <span class="option-text">{{ opt }}</span>
+                                <label *ngFor="let player of mvpCandidates" class="poll-option">
+                                    <input type="radio" name="mvp" [value]="player.name" [(ngModel)]="selectedMvp">
+                                    <img [src]="player.avatar" class="poll-avatar">
+                                    <div class="poll-info">
+                                        <span class="poll-name">{{ player.name }}</span>
+                                        <span class="poll-team">{{ player.team }}</span>
+                                    </div>
                                 </label>
                             </div>
+                            <div *ngIf="mvpCandidates.length === 0" class="text-center">Cargando candidatos...</div>
                             <button class="btn btn-primary btn-sm mt-3" (click)="voteMvp()"
                                 [disabled]="!selectedMvp">Votar MVP</button>
                         </div>
+
                         <div *ngIf="mvpVoted" class="poll-results fade-in">
                             <h4>Resultados:</h4>
-                            <div class="result-bar-container" *ngFor="let opt of mvpOptions">
-                                <span class="label">{{ opt }}</span>
+                            <div class="result-bar-container" *ngFor="let p of mvpResults">
+                                <span class="label">{{ p.player_name }}</span>
                                 <div class="progress">
-                                    <div class="bar" [style.width.%]="opt === selectedMvp ? 60 : 15"></div>
+                                    <div class="bar" [style.width.%]="getVotePercentage(p.player_name)"></div>
                                 </div>
+                                <small>{{ getVotePercentage(p.player_name) | number:'1.0-0' }}%</small>
                             </div>
                             <p class="text-muted mt-2 text-small">Gracias por tu voto.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 4. MEMORY (Legacy) -->
-                <!-- <div class="card-widget memory-widget"> ... maybe keep hidden or smaller ... </div> -->
-                <!-- Let's put a banner for memory instead -->
-
+                <!-- 4. MEMORY GAME -->
                 <div class="card-widget memory-widget span-col-2">
-                    <div class="widget-body flex-row">
-                        <div class="mem-info">
-                            <h3>🧠 SP Memory Challenge</h3>
-                            <p>Entrena tu mente encontrando las parejas.</p>
+                    <div class="widget-header">
+                        <span class="widget-icon">🧠</span>
+                        <h3>SP Memory Challenge</h3>
+                    </div>
+                    <div class="widget-body text-center">
+                        <div *ngIf="activeTab !== 'memory'">
+                            <p>Encuentra las parejas de iconos de baloncesto.</p>
+                            <button class="btn btn-outline-light" (click)="showGame('memory')">JUGAR MEMORY</button>
                         </div>
-                        <button class="btn btn-outline-light" disabled>Próximamente Torneo Mensual</button>
+
+                        <div *ngIf="activeTab === 'memory'">
+                            <div class="game-info-bar mb-3">
+                                <span>Movimientos: <strong>{{ moves }}</strong></span>
+                                <button class="btn btn-sm btn-outline-light"
+                                    (click)="resetMemoryGame()">Reiniciar</button>
+                                <button class="btn btn-sm btn-link text-white"
+                                    (click)="backToDashboard()">Cerrar</button>
+                            </div>
+
+                            <div class="memory-grid mb-3" *ngIf="!memoryGameWon; else winner">
+                                <div class="memory-card" *ngFor="let card of memoryCards"
+                                    [class.flipped]="card.flipped || card.matched" (click)="flipCard(card)">
+                                    <div class="card-inner">
+                                        <div class="card-front">
+                                            <img src="assets/images/logo-sp-pink.png" alt="SP" class="card-logo">
+                                        </div>
+                                        <div class="card-back">{{ card.icon }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <ng-template #winner>
+                                <div class="winner-box text-center fade-in">
+                                    <h3>🎉 ¡COMPLETADO! 🎉</h3>
+                                    <p>Has terminado en {{ moves }} movimientos.</p>
+                                    <p class="text-neon" *ngIf="isLoggedIn">Puntuación guardada</p>
+                                    <button class="btn btn-primary" (click)="resetMemoryGame()">Jugar Otra Vez</button>
+                                </div>
+                            </ng-template>
+                        </div>
                     </div>
                 </div>
 
