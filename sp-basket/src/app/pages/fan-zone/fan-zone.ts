@@ -49,7 +49,36 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   imagesLoaded = false;
 
-  // ... (rest of props)
+  // --- QUINIELA ---
+  prediction = { home: null, visitor: null };
+  predictionSubmitted = false;
+
+  // --- ENCUESTA MVP ---
+  mvpCandidates: any[] = [];
+  selectedMvp: string = '';
+  mvpVoted = false;
+  mvpResults: any[] = [];
+
+  // --- MEMORY GAME ---
+  memoryCards: any[] = [];
+  flippedCards: any[] = [];
+  moves = 0;
+  memoryGameWon = false;
+  memoryIcons = ['🏀', '👟', '👕', '🏆', '🥤', '🧢', '📢', '🥇'];
+
+  // --- RUNNER GAME ---
+  ctx!: CanvasRenderingContext2D;
+  gameRunning = false;
+  animationId: any;
+  scoreRunner = 0;
+  highScoreRunner = 0;
+  gameSpeed = 5;
+
+  player: RunnerPlayer = {
+    x: 50, y: 200, width: 40, height: 40, dy: 0, jumpForce: 13, grounded: true, color: '#e6007e'
+  };
+  obstacles: Obstacle[] = [];
+  obstacleTimer = 0;
 
   constructor(private auth: AuthService, private http: HttpClient) {
     this.playerImg.src = 'assets/images/logo-sp-pink.png';
@@ -57,24 +86,74 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.logoRivalImg.src = 'assets/images/comp-negro-new.jpg';
   }
 
-  // ...
+  ngOnInit() {
+    this.auth.currentUser.subscribe(user => {
+      this.isLoggedIn = !!user;
+      this.currentUser = user;
+    });
+
+    const savedRunner = localStorage.getItem('spRunnerHighScore');
+    if (savedRunner) this.highScoreRunner = parseInt(savedRunner, 10);
+
+    this.loadMvpCandidates();
+  }
+
+  ngAfterViewInit() { }
+
+  ngOnDestroy() { this.stopRunner(); }
+
+  // --- TABS ---
+  showGame(game: string) {
+    this.activeTab = game;
+    if (game === 'runner') setTimeout(() => this.initRunner(), 100);
+    if (game === 'memory') this.resetMemoryGame();
+  }
+
+  backToDashboard() {
+    this.activeTab = 'dashboard';
+    this.stopRunner();
+  }
 
   // --- DATA FETCHING ---
   loadMvpCandidates() {
     this.http.get<any[]>(`${environment.apiUrl}/api/mvp-candidates`).subscribe({
       next: (data) => this.mvpCandidates = data,
       error: () => {
-        // FALLBACK: Datos reales basados en la carpeta 'cromos'
+        // FALLBACK: Lista COMPLETA de jugadores de SP Negro y SP Rosa (basado en EquiposComponent)
         this.mvpCandidates = [
-          // SP NEGRO
-          { id: 1, name: 'Hugo García', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/47.png' },
-          { id: 2, name: 'Pablo Martínez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/48.png' },
-          { id: 3, name: 'Alex T.', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/49.png' },
+          // --- SP NEGRO ---
+          { id: 31, name: 'Jesús Antonio Jiménez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/31.png' },
+          { id: 32, name: 'Ángel Marcelo Fernández', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/32.png' },
+          { id: 33, name: 'Pergentino Edjang', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/33.png' },
+          { id: 37, name: 'Daniel Puente', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/37.png' },
+          { id: 38, name: 'Héctor San Miguel', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/38.png' },
+          { id: 39, name: 'Hugo Piñeiro', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/39.png' },
+          { id: 40, name: 'Samuel Benito', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/40.png' },
+          { id: 41, name: 'Iván Abascal', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/41.png' },
+          { id: 42, name: 'Diego Gutiérrez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/42.png' },
+          { id: 43, name: 'Pablo Martínez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/43.png' },
+          { id: 44, name: 'Rodrigo Oxinalde', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/44.png' },
+          { id: 45, name: 'Ricardo Fraguas', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/45.png' },
+          { id: 46, name: 'José Pacho', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/46.png' },
+          { id: 47, name: 'Hugo Michelena', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/47.png' },
+          { id: 48, name: 'Juan Verde', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/48.png' },
+          { id: 49, name: 'Mario Álvarez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/49.png' },
+          { id: 50, name: 'Pablo Elizalde', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/50.png' },
 
-          // SP ROSA
-          { id: 4, name: 'Lucía F.', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/26.png' },
-          { id: 5, name: 'Elena Ruiz', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/27.png' },
-          { id: 6, name: 'Laura G.', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/28.png' }
+          // --- SP ROSA ---
+          { id: 27, name: 'Diego Alonso', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/27.png' },
+          { id: 28, name: 'Adrián Cossío', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/28.png' },
+          { id: 29, name: 'Rubén Roiz', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/29.png' },
+          { id: 30, name: 'John James Riascos', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/30.png' },
+          { id: 131, name: 'Jesús Jiménez', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/31.png' },
+          { id: 132, name: 'Ángel Marcelo Fernández', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/32.png' },
+          { id: 133, name: 'Pergentino Edjang', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/33.png' },
+          { id: 34, name: 'Daniel García', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/34.png' },
+          { id: 35, name: 'Diego Fernández', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/35.png' },
+          { id: 36, name: 'Diego Amayuelas', team: 'SP Rosa', avatar: 'assets/images/cromos/sprosa/36.png' },
+          // Sin foto pero miembros
+          { id: 998, name: 'Javier Martínez', team: 'SP Rosa', avatar: 'assets/images/logo-sp-pink.png' },
+          { id: 999, name: 'Gaël Fournet', team: 'SP Rosa', avatar: 'assets/images/logo-sp-pink.png' }
         ];
       }
     });
