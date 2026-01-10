@@ -1,100 +1,119 @@
 <div class="fan-zone-page fade-in">
     <div class="container">
         <h1 class="text-center section-title fade-in-up">ZONA FAN SP BASKET</h1>
-        <p class="text-center mb-5 fade-in-up">¡Demuestra tu pasión y habilidad! Juega, compite y diviértete.</p>
+        <p class="text-center mb-5 fade-in-up">Tu espacio exclusivo. Juega, participa y gana.</p>
 
-        <!-- AUTH CHECK -->
+        <!-- AUTH LOCK -->
         <div *ngIf="!isLoggedIn" class="locked-overlay fade-in">
             <div class="lock-content">
                 <span class="lock-icon">🔒</span>
-                <h2>Acceso Exclusivo</h2>
-                <p>Para jugar, guardar puntuaciones y aparecer en el ranking, necesitas iniciar sesión.</p>
-                <a routerLink="/login" class="btn btn-primary btn-lg mt-3">INICIAR SESIÓN / REGISTRARSE</a>
+                <h2>Acceso Solo para Fans</h2>
+                <p>Regístrate para competir en el SP Runner, votar en la Quiniela y coleccionar puntos.</p>
+                <a routerLink="/login" class="btn btn-primary btn-lg mt-3">ENTRAR AL CLUB</a>
             </div>
         </div>
 
         <div class="fan-dashboard" [class.blurred]="!isLoggedIn">
 
-            <!-- TABS -->
-            <div class="game-tabs mb-4">
-                <button class="tab-btn" [class.active]="activeTab === 'hoops'" (click)="setActiveTab('hoops')">
-                    🏀 Super Hoops
-                </button>
-                <button class="tab-btn" [class.active]="activeTab === 'memory'" (click)="setActiveTab('memory')">
-                    🧠 SP Memory
-                </button>
-            </div>
+            <!-- LAYOUT GRID -->
+            <div class="dashboard-grid">
 
-            <div class="main-layout grid-layout">
-
-                <!-- GAME AREA -->
-                <div class="game-area">
-
-                    <!-- HOOPS GAME -->
-                    <div *ngIf="activeTab === 'hoops'" class="game-container hoops-container">
-                        <div class="game-info-bar">
-                            <span>Racha: <strong class="text-neon">{{ scoreHoops }}</strong></span>
-                            <span>{{ messageHoops }}</span>
-                        </div>
-
-                        <!-- Canvas Game -->
-                        <div class="canvas-wrapper">
-                            <canvas #hoopsCanvas width="300" height="400"></canvas>
-                            <div class="instructions-overlay" *ngIf="!ball.isDragging && !ball.isThrown">
-                                <small>Haz click abajo y lanza</small>
-                            </div>
-                        </div>
-
-                        <button class="btn btn-primary btn-block shoot-trigger" (click)="shootSimple()">¡LANZAR
-                            AHORA!</button>
+                <!-- 1. SP RUNNER GAME (Featured) -->
+                <div class="card-widget runner-widget span-col-2">
+                    <div class="widget-header">
+                        <span class="widget-icon">🏃‍♂️</span>
+                        <h3>SP COURT RUN</h3>
+                        <span class="badge-new">NUEVO</span>
                     </div>
-
-                    <!-- MEMORY GAME -->
-                    <div *ngIf="activeTab === 'memory'" class="game-container memory-container">
-                        <div class="game-info-bar">
-                            <span>Movimientos: <strong>{{ moves }}</strong></span>
-                            <button class="btn btn-sm btn-outline-light" (click)="resetMemoryGame()">Reset</button>
+                    <div class="widget-body text-center">
+                        <div *ngIf="activeTab !== 'runner'" class="runner-preview">
+                            <p>¡Corre por la pista, esquiva defensas y bate el récord!</p>
+                            <div class="high-score-display">Récord: {{ highScoreRunner }}</div>
+                            <button class="btn btn-primary btn-play pulse" (click)="showGame('runner')">JUGAR
+                                AHORA</button>
                         </div>
 
-                        <div class="memory-grid mb-3" *ngIf="!memoryGameWon; else winner">
-                            <div class="memory-card" *ngFor="let card of cards"
-                                [class.flipped]="card.flipped || card.matched" (click)="flipCard(card)">
-                                <div class="card-inner">
-                                    <div class="card-front">
-                                        <img src="assets/images/logo-sp-pink.png" alt="SP" class="card-logo">
-                                    </div>
-                                    <div class="card-back">{{ card.icon }}</div>
-                                </div>
-                            </div>
+                        <!-- GAME CONTAINER -->
+                        <div *ngIf="activeTab === 'runner'" class="game-viewport">
+                            <canvas #runnerCanvas width="800" height="300"></canvas>
+                            <button class="btn btn-outline-light btn-sm mt-2" (click)="backToDashboard()">Salir</button>
                         </div>
-
-                        <ng-template #winner>
-                            <div class="winner-box text-center fade-in">
-                                <h3>🎉 ¡VICTORIA! 🎉</h3>
-                                <p>Has completado el juego en {{ moves }} movimientos.</p>
-                                <p class="text-neon">Puntuación guardada</p>
-                                <button class="btn btn-primary" (click)="resetMemoryGame()">Jugar Otra Vez</button>
-                            </div>
-                        </ng-template>
                     </div>
-
                 </div>
 
-                <!-- RANKING SIDEBAR -->
-                <div class="ranking-area">
-                    <h3 class="ranking-title">🏆 Top Jugadores (Mes)</h3>
-                    <div class="ranking-list">
-                        <div class="ranking-item" *ngFor="let r of rankings; let i = index">
-                            <span class="rank-num" [class.top-3]="i < 3">#{{ i + 1 }}</span>
-                            <img [src]="r.avatar || 'assets/images/default-avatar.png'" alt="Av" class="rank-avatar">
-                            <div class="rank-info">
-                                <span class="rank-user">{{ r.username }}</span>
-                                <span class="rank-score">{{ r.best_score }} pts</span>
+                <!-- 2. QUINIELA SEMANAL -->
+                <div class="card-widget quiniela-widget">
+                    <div class="widget-header">
+                        <span class="widget-icon">📝</span>
+                        <h3>La Quiniela</h3>
+                    </div>
+                    <div class="widget-body">
+                        <p class="text-muted mb-3">Predice el resultado del próximo partido:</p>
+                        <div class="match-prediction">
+                            <div class="team">
+                                <img src="assets/images/logo-sp-pink.png" alt="SP" class="mini-logo">
+                                <span>SP Basket</span>
+                                <input type="number" [(ngModel)]="prediction.home" [disabled]="predictionSubmitted"
+                                    class="score-input">
+                            </div>
+                            <span class="vs">VS</span>
+                            <div class="team">
+                                <div class="rival-icon">🦁</div>
+                                <span>Leones</span>
+                                <input type="number" [(ngModel)]="prediction.visitor" [disabled]="predictionSubmitted"
+                                    class="score-input">
                             </div>
                         </div>
-                        <div *ngIf="rankings.length === 0" class="text-center p-3 text-muted">
-                            ¡Sé el primero en el ranking!
+                        <button *ngIf="!predictionSubmitted" class="btn btn-outline-primary btn-block mt-3"
+                            (click)="submitQuiniela()">Enviar Pronóstico</button>
+                        <div *ngIf="predictionSubmitted" class="success-msg mt-3 fade-in">
+                            ✅ ¡Pronóstico guardado! Suerte.
                         </div>
+                    </div>
+                </div>
+
+                <!-- 3. MVP POLL -->
+                <div class="card-widget poll-widget">
+                    <div class="widget-header">
+                        <span class="widget-icon">⭐</span>
+                        <h3>MVP de la Semana</h3>
+                    </div>
+                    <div class="widget-body">
+                        <div *ngIf="!mvpVoted">
+                            <p class="mb-3">¿Quién ha sido el mejor jugador?</p>
+                            <div class="poll-options">
+                                <label *ngFor="let opt of mvpOptions" class="poll-option">
+                                    <input type="radio" name="mvp" [value]="opt" [(ngModel)]="selectedMvp">
+                                    <span class="option-text">{{ opt }}</span>
+                                </label>
+                            </div>
+                            <button class="btn btn-primary btn-sm mt-3" (click)="voteMvp()"
+                                [disabled]="!selectedMvp">Votar MVP</button>
+                        </div>
+                        <div *ngIf="mvpVoted" class="poll-results fade-in">
+                            <h4>Resultados:</h4>
+                            <div class="result-bar-container" *ngFor="let opt of mvpOptions">
+                                <span class="label">{{ opt }}</span>
+                                <div class="progress">
+                                    <div class="bar" [style.width.%]="opt === selectedMvp ? 60 : 15"></div>
+                                </div>
+                            </div>
+                            <p class="text-muted mt-2 text-small">Gracias por tu voto.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. MEMORY (Legacy) -->
+                <!-- <div class="card-widget memory-widget"> ... maybe keep hidden or smaller ... </div> -->
+                <!-- Let's put a banner for memory instead -->
+
+                <div class="card-widget memory-widget span-col-2">
+                    <div class="widget-body flex-row">
+                        <div class="mem-info">
+                            <h3>🧠 SP Memory Challenge</h3>
+                            <p>Entrena tu mente encontrando las parejas.</p>
+                        </div>
+                        <button class="btn btn-outline-light" disabled>Próximamente Torneo Mensual</button>
                     </div>
                 </div>
 

@@ -1,44 +1,74 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms'; // Importante para Quiniela
+
+interface RunnerPlayer {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  dy: number;
+  jumpForce: number;
+  grounded: boolean;
+  color: string;
+}
+
+interface Obstacle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: 'cone' | 'defender';
+}
 
 @Component({
   selector: 'app-fan-zone',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './fan-zone.html',
   styleUrls: ['./fan-zone.css']
 })
-export class FanZoneComponent implements OnInit, AfterViewInit {
-  @ViewChild('hoopsCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('runnerCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
-  // Auth state
   isLoggedIn = false;
   currentUser: any = null;
+  activeTab: string = 'dashboard'; // 'dashboard', 'runner', 'memory'
 
-  // Games state
-  activeTab: 'hoops' | 'memory' = 'hoops';
-  rankings: any[] = [];
+  // --- QUINIELA ---
+  prediction = { home: null, visitor: null };
+  predictionSubmitted = false;
 
-  // --- HOOPS GAME VARS ---
+  // --- ENCUESTA MVP ---
+  mvpOptions = ['Laura G.', 'Marc P.', 'Elena R.', 'Coach Alex'];
+  selectedMvp: string = '';
+  mvpVoted = false;
+
+  // --- RUNNER GAME STATE ---
   ctx!: CanvasRenderingContext2D;
-  ball = { x: 150, y: 300, vx: 0, vy: 0, radius: 15, isDragging: false, isThrown: false };
-  hoop = { x: 150, y: 80, width: 60, height: 10 };
-  dragStart = { x: 0, y: 0 };
-  scoreHoops = 0;
-  messageHoops = '¡Arrastra y lanza!';
-  gravity = 0.5;
-  friction = 0.99;
+  gameRunning = false;
+  animationId: any;
+  scoreRunner = 0;
+  highScoreRunner = 0;
+  gameSpeed = 5;
 
-  // --- MEMORY GAME VARS ---
-  cards: any[] = [];
-  flippedCards: any[] = [];
-  moves = 0;
-  memoryGameWon = false;
-  icons = ['🏀', '👟', '👕', '🏆', '🥤', '🧢', '📢', '🥇'];
+  player: RunnerPlayer = {
+    x: 50,
+    y: 200,
+    width: 30,
+    height: 50,
+    dy: 0,
+    jumpForce: 12,
+    grounded: true,
+    color: '#e6007e'
+  };
+
+  obstacles: Obstacle[] = [];
+  obstacleTimer = 0;
 
   constructor(private auth: AuthService, private http: HttpClient) { }
 
@@ -46,231 +76,227 @@ export class FanZoneComponent implements OnInit, AfterViewInit {
     this.auth.currentUser.subscribe(user => {
       this.isLoggedIn = !!user;
       this.currentUser = user;
-      if (this.isLoggedIn) this.loadRankings('hoops');
+      // Cargar puntuaciones si es necesario
     });
+
+    const savedRunner = localStorage.getItem('spRunnerHighScore');
+    if (savedRunner) this.highScoreRunner = parseInt(savedRunner, 10);
   }
 
   ngAfterViewInit() {
-    if (this.isLoggedIn) this.initHoopsGame();
+    // Si la pestaña inicial fuera el juego
   }
 
-  setActiveTab(tab: 'hoops' | 'memory') {
-    this.activeTab = tab;
-    this.loadRankings(tab);
-    if (tab === 'hoops') setTimeout(() => this.initHoopsGame(), 100);
-    if (tab === 'memory') this.resetMemoryGame();
+  ngOnDestroy() {
+    this.stopRunner();
   }
 
-  loadRankings(game: string) {
-    this.http.get<any[]>(`${environment.apiUrl}/api/rankings?game=${game}`).subscribe(data => {
-      this.rankings = data;
-    });
+  // --- TABS & NAVIGATION ---
+  showGame(game: string) {
+    this.activeTab = game;
+    if (game === 'runner') {
+      setTimeout(() => this.initRunner(), 100);
+    }
   }
 
-  saveScore(game: string, score: number) {
-    if (!this.isLoggedIn) return;
-    this.http.post(`${environment.apiUrl}/api/scores`, { game, score }).subscribe(() => {
-      // Reload rankings silently to check if we made it to the top
-      this.loadRankings(game);
-    });
+  backToDashboard() {
+    this.activeTab = 'dashboard';
+    this.stopRunner();
   }
 
-  // ==========================================
-  // HOOPS GAME ENGINE (Canvas)
-  // ==========================================
-  initHoopsGame() {
+  // --- LOGICA QUINIELA ---
+  submitQuiniela() {
+    if (!this.isLoggedIn) return; // O mostrar aviso
+    // Aquí iría la llamada al backend real
+    setTimeout(() => {
+      this.predictionSubmitted = true;
+      // Podríamos guardar en localStorage o BD
+    }, 500);
+  }
+
+  // --- LOGICA MVP ---
+  voteMvp() {
+    if (!this.selectedMvp) return;
+    this.mvpVoted = true;
+    // Llamada backend
+  }
+
+  // ===============================================
+  // SP COURT RUN (Endless Runner)
+  // ===============================================
+  initRunner() {
     if (!this.canvasRef) return;
     const canvas = this.canvasRef.nativeElement;
     this.ctx = canvas.getContext('2d')!;
+    canvas.width = 800;
+    canvas.height = 300;
 
-    // Event Listeners
-    canvas.addEventListener('mousedown', (e) => this.onInputStart(e));
-    canvas.addEventListener('mousemove', (e) => this.onInputMove(e));
-    canvas.addEventListener('mouseup', () => this.onInputEnd());
+    // Reset State
+    this.player.y = 250; // Ground level - height
+    this.player.dy = 0;
+    this.obstacles = [];
+    this.scoreRunner = 0;
+    this.gameSpeed = 5;
+    this.gameRunning = true;
 
-    // Touch support
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this.onInputStart(e.touches[0]); });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this.onInputMove(e.touches[0]); });
-    canvas.addEventListener('touchend', (e) => { e.preventDefault(); this.onInputEnd(); });
+    // Inputs
+    window.addEventListener('keydown', this.handleInput.bind(this));
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this.performJump(); });
+    canvas.addEventListener('click', () => this.performJump());
 
-    this.resetBall();
-    this.gameLoop();
+    this.runnerLoop();
   }
 
-  resetBall() {
-    this.ball.x = 150;
-    this.ball.y = 350;
-    this.ball.vx = 0;
-    this.ball.vy = 0;
-    this.ball.isDragging = false;
-    this.ball.isThrown = false;
+  stopRunner() {
+    this.gameRunning = false;
+    cancelAnimationFrame(this.animationId);
+    window.removeEventListener('keydown', this.handleInput.bind(this));
   }
 
-  onInputStart(e: any) {
-    if (this.ball.isThrown) return;
-    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-    const x = (e.clientX || e.pageX) - rect.left;
-    const y = (e.clientY || e.pageY) - rect.top;
-
-    // Hit test ball
-    const dist = Math.sqrt((x - this.ball.x) ** 2 + (y - this.ball.y) ** 2);
-    if (dist < 30) {
-      this.ball.isDragging = true;
-      this.dragStart = { x, y };
+  handleInput(e: KeyboardEvent) {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      this.performJump();
     }
   }
 
-  onInputMove(e: any) {
-    if (!this.ball.isDragging) return;
-    // Visual feedback usually involves drawing a trajectory line, implemented in draw()
+  performJump() {
+    if (!this.gameRunning) {
+      // Restart if game over
+      this.initRunner();
+      return;
+    }
+    if (this.player.grounded) {
+      this.player.dy = -this.player.jumpForce;
+      this.player.grounded = false;
+    }
   }
 
-  onInputEnd() {
-    if (!this.ball.isDragging) return;
-    this.ball.isDragging = false;
-    this.ball.isThrown = true;
+  runnerLoop() {
+    if (!this.gameRunning) return;
 
-    // Calculate throw vector based on drag distance (inverted)
-    // Simple physics: pull back to shoot forward
-    // Or Follow cursor? Let's do simple "Throw up" based on cursor release speed or position?
-    // Let's do: Dragging moves the ball, releasing throws it.
-    // Wait, let's do "Pull and Release" (Angry Birds style) or "Flick".
-    // Let's implement simple "Flick" - velocity depends on last movement?
-    // Easier: "Pull Back" style. 
+    this.ctx.clearRect(0, 0, 800, 300);
 
-    // Implementation: simple throw up with random deviation based on skill? No, skill based.
-    // Let's assume the user dragged the ball "aiming".
-    // Actually, simple flick is best for hoops.
+    // 1. UPDATE STATE
+    this.scoreRunner++;
+    this.gameSpeed += 0.002; // Aumentar velocidad progresivamente
 
-    // Simplified: Just give it upwards velocity with slight variations
-    this.ball.vx = (Math.random() - 0.5) * 4; // Slight drift
-    this.ball.vy = -18; // Strong shot up
-  }
+    // Spawn Obstacles
+    this.obstacleTimer++;
+    if (this.obstacleTimer > Math.random() * 60 + 100) { // Random interval
+      const type = Math.random() > 0.5 ? 'cone' : 'defender';
+      const height = type === 'cone' ? 30 : 60;
+      const width = type === 'cone' ? 30 : 30;
 
-  // Better Input: Click and drag to aim (slingshot)
-  // Let's stick to a simpler logic:
-  // You click, hold to charge power, release to shoot. 
-  // Let's modify: `initHoopsGame` loop handles logic.
+      this.obstacles.push({
+        x: 800,
+        y: 300 - height,
+        width: width,
+        height: height,
+        type: type
+      });
+      this.obstacleTimer = 0;
+    }
 
-  gameLoop() {
-    if (!this.ctx) return;
-    this.ctx.clearRect(0, 0, 300, 400);
+    // Physics Player
+    this.player.dy += 0.6; // Gravity
+    this.player.y += this.player.dy;
 
-    // 1. Draw Hoop
-    this.ctx.fillStyle = '#ff6600';
-    this.ctx.fillRect(this.hoop.x - 30, this.hoop.y, 60, 5); // Rim
+    // Floor Collision
+    if (this.player.y + this.player.height > 300) {
+      this.player.y = 300 - this.player.height;
+      this.player.dy = 0;
+      this.player.grounded = true;
+    }
 
-    // Backboard
-    this.ctx.fillStyle = 'white';
-    this.ctx.fillRect(this.hoop.x - 40, this.hoop.y - 40, 80, 40);
-    this.ctx.strokeRect(this.hoop.x - 40, this.hoop.y - 40, 80, 40);
-    this.ctx.fillStyle = '#ff6600';
-    this.ctx.fillRect(this.hoop.x - 15, this.hoop.y - 25, 30, 25); // Small square
+    // Move Obstacles & Collision Detection
+    for (let i = 0; i < this.obstacles.length; i++) {
+      let obs = this.obstacles[i];
+      obs.x -= this.gameSpeed;
 
-    // 2. Physics
-    if (this.ball.isThrown) {
-      this.ball.x += this.ball.vx;
-      this.ball.y += this.ball.vy;
-      this.ball.vy += this.gravity;
-      // this.ball.vx *= this.friction; (Air resistance)
-
-      // Wall bounce
-      if (this.ball.x < 15 || this.ball.x > 285) this.ball.vx *= -0.8;
-
-      // Rim collisions (Simplified)
-      if (this.ball.y >= this.hoop.y - 5 && this.ball.y <= this.hoop.y + 5) {
-        if (this.ball.x > this.hoop.x - 30 && this.ball.x < this.hoop.x + 30) {
-          // Did it go IN? (Downward velocity)
-          if (this.ball.vy > 0) {
-            this.scoreHoops++;
-            this.messageHoops = "¡CANASTA! 🔥";
-            if (this.scoreHoops > 0) this.saveScore('hoops', this.scoreHoops); // Save active score/streak
-            this.resetBall();
-            this.ball.isThrown = false; // Stop immediately
-          }
-        } else if (Math.abs(this.ball.x - (this.hoop.x - 30)) < 10 || Math.abs(this.ball.x - (this.hoop.x + 30)) < 10) {
-          // Hit the rim edge
-          this.ball.vx *= -1;
-          this.ball.vy *= -0.8;
-        }
+      // Draw Obstacle
+      if (obs.type === 'cone') {
+        this.ctx.fillStyle = 'orange';
+        this.ctx.beginPath();
+        this.ctx.moveTo(obs.x, obs.y + obs.height);
+        this.ctx.lineTo(obs.x + obs.width / 2, obs.y);
+        this.ctx.lineTo(obs.x + obs.width, obs.y + obs.height);
+        this.ctx.fill();
+      } else {
+        this.ctx.fillStyle = 'red';
+        this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        // Draw "arms"
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(obs.x - 5, obs.y + 10, 40, 5);
       }
 
-      // Floor reset
-      if (this.ball.y > 450) {
-        this.messageHoops = "¡Fallo!";
-        this.scoreHoops = 0; // Streak reset
-        this.resetBall();
+      // Collision
+      if (
+        this.player.x < obs.x + obs.width &&
+        this.player.x + this.player.width > obs.x &&
+        this.player.y < obs.y + obs.height &&
+        this.player.height + this.player.y > obs.y
+      ) {
+        this.gameOver();
+      }
+
+      // Remove off-screen
+      if (obs.x + obs.width < 0) {
+        this.obstacles.splice(i, 1);
+        i--;
       }
     }
 
-    // 3. Draw Ball
+    // Draw Floor
+    this.ctx.fillStyle = '#CBB26A'; // Parquet color
+    this.ctx.fillRect(0, 290, 800, 10);
+    this.ctx.strokeStyle = '#fff'; // Lines
     this.ctx.beginPath();
-    this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
-    this.ctx.fillStyle = '#ff6600';
+    this.ctx.moveTo(0, 290);
+    this.ctx.lineTo(800, 290);
+    this.ctx.stroke();
+
+    // Draw Player (Jersey Style)
+    this.ctx.fillStyle = this.player.color;
+    this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+    // Head
+    this.ctx.fillStyle = '#ffccaa';
+    this.ctx.beginPath();
+    this.ctx.arc(this.player.x + this.player.width / 2, this.player.y - 10, 10, 0, Math.PI * 2);
     this.ctx.fill();
-    this.ctx.strokeStyle = '#333';
-    this.ctx.lineWidth = 2;
-    this.ctx.stroke();
-    // Lines on ball
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.ball.x - 15, this.ball.y);
-    this.ctx.bezierCurveTo(this.ball.x - 5, this.ball.y + 10, this.ball.x + 5, this.ball.y + 10, this.ball.x + 15, this.ball.y);
-    this.ctx.stroke();
+    // Number
+    this.ctx.fillStyle = 'white';
+    this.ctx.font = 'bold 20px Arial';
+    this.ctx.fillText('SP', this.player.x + 2, this.player.y + 30);
 
-    if (this.activeTab === 'hoops') requestAnimationFrame(() => this.gameLoop());
+    // Draw Score
+    this.ctx.fillStyle = 'white';
+    this.ctx.font = '20px Arial';
+    this.ctx.fillText(`Puntos: ${Math.floor(this.scoreRunner)}`, 20, 30);
+    this.ctx.fillText(`Récord: ${this.highScoreRunner}`, 20, 60);
+
+    this.animationId = requestAnimationFrame(() => this.runnerLoop());
   }
 
-  // Shoot trigger (simulated for simplicity now: pure timing/click based might be better if canvas physics is too erratic)
-  // Let's override the mouse handlers above for a simpler "Click to Shoot" mechanic with a moving hoop?
-  // User asked for "More elaborate". Moving hoop is good.
+  gameOver() {
+    this.gameRunning = false;
+    this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    this.ctx.fillRect(0, 0, 800, 300);
 
-  // NEW LOGIC: Moving Hoop + Click Timing (Simpler but polished graphics)
-  shootSimple() {
-    if (this.ball.isThrown) return;
-    this.ball.isThrown = true;
-    // Hoop is at this.hoop.x (which is static 150 now).
-    // We need to move the HOOP for difficulty.
-    const dx = (this.hoop.x - this.ball.x);
-    // Perfect shot needs vx to match dx over time?
-    // Let's just launch it towards the hoop with some randomness
-    this.ball.vx = dx / 20 + (Math.random() - 0.5) * 2;
-    this.ball.vy = -16;
-  }
+    this.ctx.fillStyle = 'white';
+    this.ctx.font = 'bold 40px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('¡FIN DEL JUEGO!', 400, 120);
+    this.ctx.font = '20px Arial';
+    this.ctx.fillText(`Puntuación: ${Math.floor(this.scoreRunner)}`, 400, 160);
+    this.ctx.fillText('Pulsa o Espacio para Reiniciar', 400, 200);
+    this.ctx.textAlign = 'left';
 
-  // ... Memory logic same as before but calling saveScore ...
-  resetMemoryGame() {
-    this.memoryGameWon = false;
-    this.moves = 0;
-    this.flippedCards = [];
-    const deck = [...this.icons, ...this.icons]
-      .sort(() => Math.random() - 0.5)
-      .map((icon, index) => ({ id: index, icon, flipped: false, matched: false }));
-    this.cards = deck;
-  }
-
-  flipCard(card: any) {
-    if (card.flipped || card.matched || this.flippedCards.length >= 2) return;
-    card.flipped = true;
-    this.flippedCards.push(card);
-    if (this.flippedCards.length === 2) {
-      this.moves++;
-      setTimeout(() => this.checkMatch(), 600);
+    if (this.scoreRunner > this.highScoreRunner) {
+      this.highScoreRunner = Math.floor(this.scoreRunner);
+      localStorage.setItem('spRunnerHighScore', this.highScoreRunner.toString());
+      // Save to backend
+      this.http.post(`${environment.apiUrl}/api/scores`, { game: 'runner', score: this.highScoreRunner }).subscribe();
     }
-  }
-
-  checkMatch() {
-    const [c1, c2] = this.flippedCards;
-    if (c1.icon === c2.icon) {
-      c1.matched = true; c2.matched = true;
-      if (this.cards.every(c => c.matched)) {
-        this.memoryGameWon = true;
-        // Score for memory = 100 - moves (min 0)
-        const score = Math.max(0, 100 - this.moves);
-        this.saveScore('memory', score);
-      }
-    } else {
-      c1.flipped = false; c2.flipped = false;
-    }
-    this.flippedCards = [];
   }
 }
