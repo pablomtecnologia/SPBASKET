@@ -17,6 +17,20 @@
 
         <div class="fan-dashboard">
 
+            <!-- TEAM TOGGLER -->
+            <div class="team-switcher-container text-center mb-4">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-team-toggle" [class.active]="currentTeam === 'rosa'"
+                        (click)="switchTeam('rosa')">
+                        SP ROSA
+                    </button>
+                    <button type="button" class="btn btn-team-toggle" [class.active]="currentTeam === 'negro'"
+                        (click)="switchTeam('negro')">
+                        SP NEGRO
+                    </button>
+                </div>
+            </div>
+
             <!-- LAYOUT GRID -->
             <div class="dashboard-grid">
 
@@ -24,12 +38,12 @@
                 <div class="card-widget runner-widget span-col-2">
                     <div class="widget-header">
                         <span class="widget-icon">🏃‍♂️</span>
-                        <h3>SP COURT RUN</h3>
+                        <h3>SUPER BASKET MARIO</h3>
                         <span class="badge-new">NUEVO</span>
                     </div>
                     <div class="widget-body text-center">
                         <div *ngIf="activeTab !== 'runner'" class="runner-preview">
-                            <p>¡Corre por la pista, esquiva defensas y bate el récord!</p>
+                            <p>¡Salta con el logo de tu equipo y esquiva a los rivales!</p>
                             <div class="high-score-display">Récord: {{ highScoreRunner }}</div>
                             <button class="btn btn-primary btn-play pulse" (click)="showGame('runner')">JUGAR
                                 AHORA</button>
@@ -37,59 +51,65 @@
 
                         <!-- GAME CONTAINER -->
                         <div *ngIf="activeTab === 'runner'" class="game-viewport">
-                            <canvas #runnerCanvas width="800" height="300"></canvas>
+                            <canvas #runnerCanvas width="800" height="400"></canvas>
+                            <div class="mt-2 text-center text-muted small">Usa ESPACIO o CLICK para saltar</div>
                             <button class="btn btn-outline-light btn-sm mt-2" (click)="backToDashboard()">Salir</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. QUINIELA SEMANAL -->
+                <!-- 2. QUINIELA SEMANAL (Filtered by Team) -->
                 <div class="card-widget quiniela-widget">
                     <div class="widget-header">
                         <span class="widget-icon">📝</span>
-                        <h3>La Quiniela</h3>
+                        <h3>La Quiniela {{ currentTeam | titlecase }}</h3>
                     </div>
                     <div class="widget-body">
-                        <div *ngFor="let q of quinielas; let last = last" class="quiniela-match-block mb-4">
-                            <p class="text-muted mb-1" style="font-size: 0.9rem;">
-                                <strong>{{q.competition}}</strong> - {{q.date}}
-                            </p>
-                            <div class="match-prediction">
-                                <div class="team">
-                                    <img [src]="q.logoHome" alt="Home" class="mini-logo">
-                                    <span>{{q.home}}</span>
-                                    <input type="number" [(ngModel)]="q.prediction.home" [disabled]="q.submitted"
-                                        class="score-input">
+                        <ng-container *ngFor="let q of quinielas">
+                            <div *ngIf="q.team === currentTeam" class="quiniela-match-block mb-4 fade-in">
+                                <p class="text-muted mb-1" style="font-size: 0.9rem;">
+                                    <strong>{{q.competition}}</strong> <br> {{q.date}}
+                                </p>
+                                <div class="match-prediction">
+                                    <div class="team">
+                                        <img [src]="q.logoHome" alt="Home" class="mini-logo">
+                                        <span>{{q.home}}</span>
+                                        <input type="number" [(ngModel)]="q.prediction.home" [disabled]="q.submitted"
+                                            class="score-input">
+                                    </div>
+                                    <span class="vs">VS</span>
+                                    <div class="team">
+                                        <img [src]="q.logoVisitor" alt="Visitor" class="mini-logo">
+                                        <span>{{q.visitor}}</span>
+                                        <input type="number" [(ngModel)]="q.prediction.visitor" [disabled]="q.submitted"
+                                            class="score-input">
+                                    </div>
                                 </div>
-                                <span class="vs">VS</span>
-                                <div class="team">
-                                    <img [src]="q.logoVisitor" alt="Visitor" class="mini-logo">
-                                    <span>{{q.visitor}}</span>
-                                    <input type="number" [(ngModel)]="q.prediction.visitor" [disabled]="q.submitted"
-                                        class="score-input">
+                                <button *ngIf="!q.submitted" class="btn btn-outline-primary btn-block mt-2"
+                                    (click)="submitQuiniela(q)">Enviar Pronóstico</button>
+                                <div *ngIf="q.submitted" class="success-msg mt-2 fade-in">
+                                    ✅ ¡Pronóstico guardado!
                                 </div>
                             </div>
-                            <button *ngIf="!q.submitted" class="btn btn-outline-primary btn-block mt-2"
-                                (click)="submitQuiniela(q)">Enviar Pronóstico</button>
-                            <div *ngIf="q.submitted" class="success-msg mt-2 fade-in">
-                                ✅ ¡Pronóstico guardado!
-                            </div>
-                            <hr *ngIf="!last" style="border-color: rgba(255,255,255,0.1);">
+                        </ng-container>
+                        <div *ngIf="!currentQuiniela" class="text-center text-muted">
+                            No hay partido disponible para esta semana.
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. MVP POLL -->
+                <!-- 3. MVP POLL (Filtered by Team) -->
                 <div class="card-widget poll-widget">
                     <div class="widget-header">
                         <span class="widget-icon">⭐</span>
-                        <h3>MVP de la Semana</h3>
+                        <h3>MVP {{ currentTeam | titlecase }}</h3>
                     </div>
                     <div class="widget-body">
                         <div *ngIf="!mvpVoted">
-                            <p class="mb-3">¿Quién fue el mejor jugador?</p>
+                            <p class="mb-3">¿Quién fue el mejor de {{ currentTeam === 'rosa' ? 'SP Rosa' : 'SP Negro'
+                                }}?</p>
                             <div class="poll-options">
-                                <label *ngFor="let player of mvpCandidates" class="poll-option">
+                                <label *ngFor="let player of filteredMvpCandidates" class="poll-option fade-in">
                                     <input type="radio" name="mvp" [value]="player.name" [(ngModel)]="selectedMvp">
                                     <img [src]="player.avatar" class="poll-avatar">
                                     <div class="poll-info">
@@ -98,7 +118,8 @@
                                     </div>
                                 </label>
                             </div>
-                            <div *ngIf="mvpCandidates.length === 0" class="text-center">Cargando candidatos...</div>
+                            <div *ngIf="filteredMvpCandidates.length === 0" class="text-center">Cargando candidatos...
+                            </div>
                             <button class="btn btn-primary btn-sm mt-3" (click)="voteMvp()"
                                 [disabled]="!selectedMvp">Votar MVP</button>
                         </div>

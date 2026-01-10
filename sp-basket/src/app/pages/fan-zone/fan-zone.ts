@@ -1,7 +1,6 @@
 import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
@@ -28,7 +27,7 @@ interface Obstacle {
 @Component({
   selector: 'app-fan-zone',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './fan-zone.html',
   styleUrls: ['./fan-zone.css']
 })
@@ -38,10 +37,11 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   isLoggedIn = false;
   currentUser: any = null;
   activeTab: string = 'dashboard';
+  currentTeam: 'rosa' | 'negro' = 'rosa';
 
   // --- ASSETS ---
   playerImg = new Image();
-  logoRivalImg = new Image();
+  rivalLogos: HTMLImageElement[] = [];
 
   // Logos de Equipos para Quiniela/Partidos
   logoSpNegro = 'assets/images/comp-negro-new.jpg'; // O el que sea correcto
@@ -52,24 +52,26 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   // --- QUINIELA ---
   quinielas = [
     {
-      id: 'rosa-match',
-      competition: '1ª Div. Nacional',
-      home: 'SP Rosa',
-      visitor: 'AMIDE',
-      date: 'Dom 18 Ene, 16:30',
+      id: 'rosa-match-9',
+      team: 'rosa',
+      competition: '1ª División Masculina',
+      home: 'SP Basket Rosa',
+      visitor: 'Cantbasket 04',
+      date: 'Domingo 12 Ene, 12:00',
       logoHome: 'assets/images/logo-sp-pink.png',
-      logoVisitor: 'assets/images/comp-rosa-new.jpg',
+      logoVisitor: 'assets/images/logos/cantbasket04.jpeg',
       prediction: { home: null, visitor: null },
       submitted: false
     },
     {
-      id: 'negro-match',
-      competition: '2ª Div. Autonómica',
-      home: 'Intermodal Sea Solutions',
-      visitor: 'SP Negro',
-      date: 'Sab 17 Ene, 18:30',
-      logoHome: 'assets/images/comp-negro-new.jpg',
-      logoVisitor: 'assets/images/logo-sp-pink.png',
+      id: 'negro-match-9',
+      team: 'negro',
+      competition: '2ª División Autonómica',
+      home: 'Daygon Santander',
+      visitor: 'SP Basket Negro',
+      date: 'Sábado 11 Ene, 18:30',
+      logoHome: 'assets/images/logos/daygon.jpg',
+      logoVisitor: 'assets/images/comp-negro-new.jpg',
       prediction: { home: null, visitor: null },
       submitted: false
     }
@@ -77,7 +79,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // --- ENCUESTA MVP ---
   // Inicializamos DIRECTAMENTE con los datos para evitar "Cargando..."
-  mvpCandidates: any[] = [
+  allMvpCandidates: any[] = [
     // --- SP NEGRO ---
     { id: 31, name: 'Jesús Antonio Jiménez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/31.png' },
     { id: 32, name: 'Ángel Marcelo Fernández', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/32.png' },
@@ -127,18 +129,28 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   animationId: any;
   scoreRunner = 0;
   highScoreRunner = 0;
-  gameSpeed = 5;
+  gameSpeed = 6;
 
   player: RunnerPlayer = {
-    x: 50, y: 200, width: 40, height: 40, dy: 0, jumpForce: 13, grounded: true, color: '#e6007e'
+    x: 50, y: 300, width: 50, height: 50, dy: 0, jumpForce: 18, grounded: true, color: '#e6007e'
   };
   obstacles: Obstacle[] = [];
   obstacleTimer = 0;
 
   constructor(private auth: AuthService, private http: HttpClient) {
-    this.playerImg.src = 'assets/images/logo-sp-pink.png';
-    // Usamos el logo de competición negro como rival por defecto en el juego
-    this.logoRivalImg.src = 'assets/images/comp-negro-new.jpg';
+    this.updatePlayerAsset();
+
+    // Cargar Logos Rivales para el juego
+    const rivals = [
+      'assets/images/logos/cantbasket04.jpeg',
+      'assets/images/logos/daygon.jpg',
+      'assets/images/logos/amide.jpeg',
+      'assets/images/logos/solares.jpg'
+    ];
+    rivals.forEach(src => {
+      const img = new Image(); img.src = src;
+      this.rivalLogos.push(img);
+    });
   }
 
   ngOnInit() {
@@ -157,6 +169,28 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() { this.stopRunner(); }
 
+  // --- EQUIPOS TOGGLE ---
+  switchTeam(team: 'rosa' | 'negro') {
+    this.currentTeam = team;
+    this.updatePlayerAsset();
+    this.selectedMvp = ''; // Reset selección
+  }
+
+  updatePlayerAsset() {
+    this.playerImg.src = this.currentTeam === 'rosa'
+      ? 'assets/images/logo-sp-pink.png'
+      : 'assets/images/comp-negro-new.jpg'; // O usa un logo negro específico si tienes
+  }
+
+  get filteredMvpCandidates() {
+    const teamFilter = this.currentTeam === 'rosa' ? 'SP Rosa' : 'SP Negro';
+    return this.allMvpCandidates.filter(c => c.team === teamFilter);
+  }
+
+  get currentQuiniela() {
+    return this.quinielas.find(q => q.team === this.currentTeam);
+  }
+
   // --- TABS ---
   showGame(game: string) {
     this.activeTab = game;
@@ -172,10 +206,10 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   // --- DATA FETCHING ---
   loadMvpCandidates() {
     this.http.get<any[]>(`${environment.apiUrl}/api/mvp-candidates`).subscribe({
-      next: (data) => this.mvpCandidates = data,
+      next: (data) => this.allMvpCandidates = data,
       error: () => {
         // FALLBACK: Lista COMPLETA de jugadores de SP Negro y SP Rosa (basado en EquiposComponent)
-        this.mvpCandidates = [
+        this.allMvpCandidates = [
           // --- SP NEGRO ---
           { id: 31, name: 'Jesús Antonio Jiménez', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/31.png' },
           { id: 32, name: 'Ángel Marcelo Fernández', team: 'SP Negro', avatar: 'assets/images/cromos/spnegro/32.png' },
@@ -291,15 +325,15 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.flippedCards = [];
   }
 
-  // --- RUNNER GAME ---
+  // --- RUNNER GAME (SUPER BASKET MARIO) ---
   initRunner() {
     if (!this.runnerCanvasRef) return;
     const canvas = this.runnerCanvasRef.nativeElement;
     this.ctx = canvas.getContext('2d')!;
     canvas.width = 800;
-    canvas.height = 300;
+    canvas.height = 400; // Más alto para saltos estilo Mario
 
-    this.player.y = 250;
+    this.player.y = 300;
     this.player.dy = 0;
     this.obstacles = [];
     this.scoreRunner = 0;
@@ -329,100 +363,134 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   performJump() {
     if (!this.gameRunning) { this.initRunner(); return; }
     if (this.player.grounded) {
-      this.player.dy = -this.player.jumpForce;
+      this.player.dy = -15; // Salto potente
       this.player.grounded = false;
     }
   }
 
   runnerLoop() {
     if (!this.gameRunning) return;
-    this.ctx.clearRect(0, 0, 800, 300);
+
+    // Canvas Size
+    const W = 800;
+    const H = 400;
+    const FloorY = 350;
+
+    this.ctx.clearRect(0, 0, W, H);
 
     // Updates
-    this.scoreRunner++;
-    this.gameSpeed += 0.003;
+    this.scoreRunner += 0.1;
+    this.gameSpeed += 0.001;
     this.obstacleTimer++;
 
-    // Spawning
-    if (this.obstacleTimer > Math.random() * 60 + 90) {
-      const type = Math.random() > 0.5 ? 'cone' : 'defender';
-      const height = type === 'cone' ? 40 : 50;
-      const width = 40;
-      this.obstacles.push({ x: 800, y: 300 - height, width, height, type });
+    // Spawning (Pipes & Rivals)
+    if (this.obstacleTimer > Math.random() * 80 + 100) {
+      const type = Math.random() > 0.6 ? 'pipe' : 'defender'; // 'pipe' is internal logic for Green Block
+      const width = type === 'pipe' ? 50 : 45;
+      const height = type === 'pipe' ? (Math.random() * 50 + 40) : 45;
+
+      this.obstacles.push({ x: W, y: FloorY - height, width, height, type: type as any });
       this.obstacleTimer = 0;
     }
 
     // Physics
     this.player.dy += 0.7; // Gravity
     this.player.y += this.player.dy;
-    if (this.player.y + this.player.height > 300) {
-      this.player.y = 300 - this.player.height;
+
+    // Suelo colisión
+    if (this.player.y + this.player.height > FloorY) {
+      this.player.y = FloorY - this.player.height;
       this.player.dy = 0;
       this.player.grounded = true;
     }
 
     // Drawing Elements
-    // 1. Floor
-    this.ctx.fillStyle = '#CBB26A'; this.ctx.fillRect(0, 290, 800, 10);
 
-    // 2. Player (Image or Fallback)
+    // 1. Sky (Noche Premium)
+    var grd = this.ctx.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, "#0f0c29");
+    grd.addColorStop(1, "#302b63");
+    this.ctx.fillStyle = grd;
+    this.ctx.fillRect(0, 0, W, H);
+
+    // 2. Stars
+    this.ctx.fillStyle = "#FFF";
+    if (Math.random() > 0.9) this.ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+
+    // 3. Floor (Bricked)
+    this.ctx.fillStyle = '#5c3d2e'; // Tierra
+    this.ctx.fillRect(0, FloorY, W, H - FloorY);
+    this.ctx.fillStyle = '#65C256'; // Hierba
+    this.ctx.fillRect(0, FloorY, W, 10);
+
+    // 4. Player (Team Logo or Pink Box)
     try {
       this.ctx.drawImage(this.playerImg, this.player.x, this.player.y, this.player.width, this.player.height);
     } catch (e) {
-      this.ctx.fillStyle = '#e6007e';
+      this.ctx.fillStyle = this.player.color;
       this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
     }
 
-    // 3. Obstacles
+    // 5. Obstacles
     for (let i = 0; i < this.obstacles.length; i++) {
       let obs = this.obstacles[i];
       obs.x -= this.gameSpeed;
 
-      if (obs.type === 'defender') {
-        // Draw Rival Logo if available, else Red Box
+      if ((obs.type as any) === 'pipe') {
+        // Dibujar Tubería estilo Mario (Verde)
+        this.ctx.fillStyle = '#228B22'; // ForestGreen
+        this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        this.ctx.strokeStyle = '#006400';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+        // Cabeza tubería visual
+        this.ctx.fillRect(obs.x - 5, obs.y, obs.width + 10, 20);
+      } else {
+        // Enigo (Rival Logo)
+        // Pick random logo based on position to simulate variety
+        const rivalIdx = Math.floor(obs.x / 200) % this.rivalLogos.length;
+        const img = this.rivalLogos[Math.abs(rivalIdx)] || this.rivalLogos[0];
+
         try {
-          this.ctx.drawImage(this.logoRivalImg, obs.x, obs.y, obs.width, obs.height);
+          if (img && img.complete) {
+            this.ctx.drawImage(img, obs.x, obs.y, obs.width, obs.height);
+          } else {
+            throw new Error('Image not loaded');
+          }
         } catch {
           this.ctx.fillStyle = 'red';
           this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
         }
-      } else {
-        // Cone
-        this.ctx.fillStyle = 'orange';
-        this.ctx.beginPath();
-        this.ctx.moveTo(obs.x, obs.y + obs.height);
-        this.ctx.lineTo(obs.x + obs.width / 2, obs.y);
-        this.ctx.lineTo(obs.x + obs.width, obs.y + obs.height);
-        this.ctx.fill();
       }
 
       // Collision
-      if (this.player.x < obs.x + obs.width - 10 && this.player.x + this.player.width > obs.x + 10 &&
-        this.player.y < obs.y + obs.height - 10 && this.player.height + this.player.y > obs.y) {
+      if (this.player.x < obs.x + obs.width - 5 && this.player.x + this.player.width > obs.x + 5 &&
+        this.player.y < obs.y + obs.height - 5 && this.player.height + this.player.y > obs.y) {
         this.gameOver();
       }
 
       if (obs.x + obs.width < 0) { this.obstacles.splice(i, 1); i--; }
     }
 
-    // 4. UI
-    this.ctx.fillStyle = 'white'; this.ctx.font = '20px Arial';
-    this.ctx.fillText(`Puntos: ${Math.floor(this.scoreRunner)}`, 20, 30);
-    this.ctx.fillText(`Récord: ${this.highScoreRunner}`, 20, 60);
+    // 6. UI
+    this.ctx.fillStyle = 'white'; this.ctx.font = 'bold 24px Arial';
+    this.ctx.fillText(`Score: ${Math.floor(this.scoreRunner)}`, 20, 40);
+    this.ctx.fillText(`High: ${this.highScoreRunner}`, 20, 70);
 
     this.animationId = requestAnimationFrame(() => this.runnerLoop());
   }
 
   gameOver() {
     this.gameRunning = false;
-    this.ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    this.ctx.fillRect(0, 0, 800, 300);
+    this.ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    this.ctx.fillRect(0, 0, 800, 400);
     this.ctx.fillStyle = '#fff';
     this.ctx.font = 'bold 40px Arial'; this.ctx.textAlign = 'center';
-    this.ctx.fillText('¡CAÍSTE!', 400, 120);
-    this.ctx.font = '20px Arial';
-    this.ctx.fillText(`Puntos: ${Math.floor(this.scoreRunner)}`, 400, 160);
-    this.ctx.fillText('Click o Espacio para Reintentar', 400, 200);
+    this.ctx.fillText('GAME OVER', 400, 150);
+    this.ctx.font = '24px Arial';
+    this.ctx.fillText(`Score: ${Math.floor(this.scoreRunner)}`, 400, 200);
+    this.ctx.fillStyle = '#e6007e';
+    this.ctx.fillText('Press SPACE/CLICK to Restart', 400, 250);
     this.ctx.textAlign = 'left';
 
     if (this.scoreRunner > this.highScoreRunner) {
