@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Tournament {
+  id                    Int            @id @default(autoincrement())
+  name                  String
+  date                  String?
+  venue                 String?
+  matchDuration         Int            @default(15)
+  matchPlayTime         Int            @default(10)
+  numCourts             Int            @default(1)
+  active                Boolean        @default(false)
+  createdAt             DateTime       @default(now())
+  rules                 String?
+  contactInfo           String?
+  locationInfo          String?
+  generalInfo           String?
+  eventPosterUrl        String?
+  cafePosterUrl         String?
+  sponsorsImageUrl      String?
+  headerLogoUrl         String?
+  backgroundLogoUrl     String?
+  timerRemainingSeconds Int            @default(600)
+  timerRunning          Boolean        @default(false)
+  timerLastSync         DateTime       @default(now())
+  strictScheduleMode    Boolean        @default(false)
+  monitorRefreshTime    Int            @default(30)
+  assignOfficialsToCourt Boolean       @default(false)
+  groupLogicId          Int
+  categories            Category[]
+  jornadas              Jornada[]
+  scheduleSlots         ScheduleSlot[]
+  officials             Official[]
+  courts                Court[]
+  groupLogic            GroupLogic     @relation(fields: [groupLogicId], references: [id], onDelete: Restrict)
+}
+
+model GroupLogic {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  config      String
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tournaments Tournament[]
+}
+
+model Category {
+  id           Int                  @id @default(autoincrement())
+  name         String
+  color        String               @default("#3B82F6")
+  gender       String               @default("MIXTO")
+  isVeteran    Boolean              @default(false)
+  manualGroupAssignment Boolean     @default(false)
+  minAge       String?
+  maxAge       String?
+  tournamentId Int
+  tournament   Tournament           @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  matches      Match[]
+  teams        Team[]
+  courtConfigs JornadaCourtConfig[]
+}
+
+model Team {
+  id              Int      @id @default(autoincrement())
+  name            String
+  club            String?
+  group           String?
+  contactName     String?
+  contactLastName String?
+  contactPhone    String?
+  contactEmail    String?
+  categoryId      Int
+  awayMatches     Match[]  @relation("AwayTeam")
+  homeMatches     Match[]  @relation("HomeTeam")
+  players         Player[]
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Player {
+  id        Int     @id @default(autoincrement())
+  name      String
+  lastName  String?
+  phone     String?
+  birthDate String?
+  number    Int?
+  teamId    Int
+  shirtSize String?
+  team      Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model Match {
+  id           Int           @id @default(autoincrement())
+  matchNumber  Int?
+  group        String?
+  round        Int           @default(1)
+  homeTeamId   Int?
+  awayTeamId   Int?
+  homeScore    Int?
+  awayScore    Int?
+  homeFouls    Int           @default(0)
+  awayFouls    Int           @default(0)
+  status       String        @default("pending")
+  active       Boolean       @default(false)
+  isLive       Boolean       @default(false)
+  officialName String?
+  liveSessionKey String?
+  observations String?
+  categoryId   Int
+  awayTeam     Team?         @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam     Team?         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  logs         MatchLog[]
+  scheduleSlot ScheduleSlot?
+}
+
+model MatchLog {
+  id           Int      @id @default(autoincrement())
+  matchId      Int
+  officialName String?
+  timestamp    DateTime @default(now())
+  action       String
+  homeScore    Int?
+  awayScore    Int?
+  homeFouls    Int?
+  awayFouls    Int?
+  gameTime     String?
+  details      String?
+  match        Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model Official {
+  id              Int        @id @default(autoincrement())
+  firstName       String
+  lastName        String
+  isOperational   Boolean    @default(true)
+  assignedCourtId Int?
+  tournamentId    Int
+  assignedCourt   Court?      @relation("OfficialAssignedCourt", fields: [assignedCourtId], references: [id], onDelete: SetNull)
+  tournament      Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+}
+
+model Jornada {
+  id           Int                  @id @default(autoincrement())
+  date         String
+  startTime    String
+  endTime      String
+  matchDuration Int                  @default(15)
+  matchPlayTime Int                  @default(10)
+  restRoundsBetweenMatches Int       @default(1)
+  tournamentId Int
+  tournament   Tournament           @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  courtConfigs JornadaCourtConfig[]
+}
+
+model Court {
+  id           Int                  @id @default(autoincrement())
+  name         String
+  tournamentId Int
+  tournament   Tournament           @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  configs      JornadaCourtConfig[]
+  assignedOfficials Official[]      @relation("OfficialAssignedCourt")
+}
+
+model JornadaCourtConfig {
+  id         Int        @id @default(autoincrement())
+  jornadaId  Int
+  courtId    Int
+  jornada    Jornada    @relation(fields: [jornadaId], references: [id], onDelete: Cascade)
+  court      Court      @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  categories Category[]
+}
+
+model ScheduleSlot {
+  id           Int        @id @default(autoincrement())
+  court        String
+  date         String     @default("")
+  startTime    String
+  matchId      Int        @unique
+  tournamentId Int
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  match        Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}

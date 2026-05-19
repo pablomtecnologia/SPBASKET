@@ -1,0 +1,4 @@
+{
+  "ignore": ["prisma/*.db", "prisma/*.db-journal", "uploads/*", "scratch/*", "node_modules/*"],
+  "watch": ["src/"]
+}

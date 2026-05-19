@@ -1,0 +1,14 @@
+{
+  "name": "sftp-deployer",
+  "version": "1.0.0",
+  "scripts": {
+    "deploy": "node deploy_sftp.js",
+    "check": "node check_sftp.js",
+    "deploy-vps": "node deploy_vps_frontend.js",
+    "deploy-nginx": "node deploy_vps_nginx.js",
+    "check-nginx": "node check_nginx_link.js"
+  },
+  "dependencies": {
+    "ssh2-sftp-client": "^9.1.0"
+  }
+}

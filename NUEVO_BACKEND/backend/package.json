@@ -1,0 +1,24 @@
+{
+  "name": "spbasket-backend",
+  "version": "1.0.0",
+  "description": "Backend API para SPBASKET 3x3 Tournament Manager",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "db:push": "npx prisma db push",
+    "db:studio": "npx prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.8.0",
+    "nodemon": "^3.1.9",
+    "prisma": "^5.22.0"
+  }
+}
