@@ -18,10 +18,8 @@ import { getGroupLogics, createGroupLogic, updateGroupLogic, deleteGroupLogic } 
 const GROUP_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 const POSITION_COUNT = 16
 
-const emptyDefinition = (definitionNumber = '') => ({
-  definitionNumber,
+const emptyDefinition = () => ({
   teamCount: '',
-  active: true,
   roundTripCount: 1,
   groups: Object.fromEntries(GROUP_KEYS.map(key => [key, ''])),
   qualifiers: { 1: '', 2: '', 3: '', 4: '', 5: '' },
@@ -32,18 +30,14 @@ const emptyDefinition = (definitionNumber = '') => ({
 const defaultConfigObject = {
   definitions: [
     {
-      definitionNumber: 1,
       teamCount: 3,
-      active: true,
       roundTripCount: 2,
       groups: { A: 3, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0, H: 0, I: 0, J: 0 },
       finals: { octavos: false, cuartos: false, semifinal: false, final: true, playThirdFourth: false },
       positions: ['A1', 'A2', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
     },
     {
-      definitionNumber: 2,
       teamCount: 4,
-      active: true,
       roundTripCount: 1,
       groups: { A: 4, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0, H: 0, I: 0, J: 0 },
       finals: { octavos: false, cuartos: false, semifinal: true, final: false, playThirdFourth: false },
@@ -56,10 +50,8 @@ const parseConfig = (configString) => {
   try {
     const parsed = JSON.parse(configString || '{}')
     const defs = Array.isArray(parsed.definitions) ? parsed.definitions : []
-    return defs.map((def, index) => ({
-      definitionNumber: parseInt(def.definitionNumber) || (index + 1),
+    return defs.map(def => ({
       teamCount: def.teamCount ?? '',
-      active: def.active !== false,
       roundTripCount: def.roundTripCount ?? 1,
       groups: Object.fromEntries(GROUP_KEYS.map(key => [key, def.groups?.[key] ?? ''])),
       qualifiers: {
@@ -89,10 +81,8 @@ const parseConfig = (configString) => {
 }
 
 const serializeConfig = (definitions) => JSON.stringify({
-  definitions: sortDefinitionsByTeamCount(definitions).map(def => ({
-    definitionNumber: parseInt(def.definitionNumber) || null,
+  definitions: definitions.map(def => ({
     teamCount: parseInt(def.teamCount),
-    active: def.active !== false,
     roundTripCount: parseInt(def.roundTripCount) || 1,
     groups: Object.fromEntries(GROUP_KEYS.map(key => [key, parseInt(def.groups[key] || 0) || 0])),
     qualifiers: {
@@ -171,58 +161,6 @@ const buildQualifiersText = (qualifiers) => {
 const buildPositionsText = (positions, finals) => {
   const rows = getUsedPositions(positions, finals)
   return rows.length ? rows.map(row => `${row.slot}: ${row.value}`).join(' | ') : 'Sin posiciones configuradas'
-}
-
-const getDefinitionDuplicateCount = (definitions, teamCount) => {
-  const parsedTeamCount = parseInt(teamCount)
-  if (!Number.isInteger(parsedTeamCount) || parsedTeamCount <= 0) return 0
-  return definitions.filter(def => parseInt(def.teamCount) === parsedTeamCount).length
-}
-
-const getNextDefinitionNumber = (definitions) => (
-  definitions.reduce((maxValue, def) => {
-    const current = parseInt(def.definitionNumber)
-    return Number.isInteger(current) && current > maxValue ? current : maxValue
-  }, 0) + 1
-)
-
-const sortDefinitionsByTeamCount = (definitions) => (
-  [...definitions].sort((a, b) => {
-    const aCount = parseInt(a?.teamCount)
-    const bCount = parseInt(b?.teamCount)
-    const safeACount = Number.isInteger(aCount) ? aCount : Number.MAX_SAFE_INTEGER
-    const safeBCount = Number.isInteger(bCount) ? bCount : Number.MAX_SAFE_INTEGER
-    return safeACount - safeBCount
-  })
-)
-
-const getActiveDefinitionConflict = (definitions, index) => {
-  const def = definitions[index]
-  const teamCount = parseInt(def?.teamCount)
-  if (!def || def.active === false || !Number.isInteger(teamCount) || teamCount <= 0) return null
-  return definitions.findIndex((candidate, candidateIndex) => (
-    candidateIndex !== index &&
-    candidate.active !== false &&
-    parseInt(candidate.teamCount) === teamCount
-  ))
-}
-
-const shouldShowActiveConflictWarning = (definitions, index) => {
-  const def = definitions[index]
-  const teamCount = parseInt(def?.teamCount)
-  if (!def || def.active === false || !Number.isInteger(teamCount) || teamCount <= 0) return false
-
-  const activeIndexes = definitions
-    .map((candidate, candidateIndex) => ({
-      candidateIndex,
-      teamCount: parseInt(candidate?.teamCount),
-      active: candidate?.active !== false
-    }))
-    .filter(candidate => candidate.active && candidate.teamCount === teamCount)
-    .map(candidate => candidate.candidateIndex)
-
-  if (activeIndexes.length <= 1) return false
-  return Math.max(...activeIndexes) === index
 }
 
 const TOURNAMENT_RULES = {
@@ -534,7 +472,7 @@ function GroupLogicPreview({ logic, onClose, onDownload, downloading }) {
                 <section key={`${logicData.id}-${index}`} style={{ border: '1px solid #dbe4ee', borderRadius: '14px', padding: '1rem', background: '#ffffff' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
                     <div>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Definición {def.definitionNumber || index + 1}</div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Definición {index + 1}</div>
                       <h4 style={{ margin: '0.25rem 0 0', fontSize: '1.2rem' }}>{def.teamCount} jugadores por categoría</h4>
                     </div>
                     <span style={{ padding: '0.35rem 0.7rem', borderRadius: '999px', border: '1px solid #fdba74', background: '#fff7ed', color: '#9a3412', fontSize: '0.78rem', fontWeight: 700 }}>
@@ -640,7 +578,7 @@ function GroupLogicPreview({ logic, onClose, onDownload, downloading }) {
   )
 }
 
-export default function GroupLogicManager() {
+export default function GroupLogicManager({ readOnlyGlobal = false }) {
   const [logics, setLogics] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -681,7 +619,7 @@ export default function GroupLogicManager() {
 
   const resetForm = () => {
     setEditing(null)
-    setReadOnlyMode(false)
+    setReadOnlyMode(!!readOnlyGlobal)
     setName('')
     setDescription('')
     setDefinitions(parseConfig(JSON.stringify(defaultConfigObject)))
@@ -693,11 +631,21 @@ export default function GroupLogicManager() {
     setInfo(null)
   }
 
+  const usedTeamCounts = useMemo(() => new Set(
+    definitions
+      .map(def => parseInt(def.teamCount))
+      .filter(n => Number.isInteger(n) && n > 0)
+  ), [definitions])
+
   const validateDefinitions = () => {
+    const seen = new Set()
     for (const def of definitions) {
       const teamCount = parseInt(def.teamCount)
       const roundTripCount = parseInt(def.roundTripCount)
       if (!Number.isInteger(teamCount) || teamCount <= 0) throw new Error('Cada bloque debe tener un número de jugadores válido.')
+      if (seen.has(teamCount)) throw new Error(`Ya existe una definición para ${teamCount} jugadores.`)
+      seen.add(teamCount)
+
       if (!Number.isInteger(roundTripCount) || roundTripCount <= 0) throw new Error(`La definición de ${teamCount} jugadores debe tener un número de vueltas válido.`)
 
       const totalGrouped = GROUP_KEYS.reduce((sum, key) => sum + (parseInt(def.groups[key] || 0) || 0), 0)
@@ -707,50 +655,19 @@ export default function GroupLogicManager() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (readOnlyMode) return
+    if (readOnlyMode || readOnlyGlobal) return
     setSaving(true)
     setError(null)
     setInfo(null)
     try {
       validateDefinitions()
-      const activeConflicts = []
-      const seenActive = new Set()
-      definitions.forEach(def => {
-        const teamCount = parseInt(def.teamCount)
-        if (!Number.isInteger(teamCount) || def.active === false) return
-        if (seenActive.has(teamCount) && !activeConflicts.includes(teamCount)) activeConflicts.push(teamCount)
-        seenActive.add(teamCount)
-      })
-
-      let definitionsToSave = definitions
-      if (activeConflicts.length > 0) {
-        const confirmed = window.confirm(`Hay varias definiciones activas para ${activeConflicts.join(', ')} jugadores. Al guardar se desactivará la anterior y se mantendrá activa solo la última de cada número. ¿Deseas continuar?`)
-        if (!confirmed) {
-          setSaving(false)
-          return
-        }
-
-        const lastActiveIndexByTeamCount = new Map()
-        definitions.forEach((def, index) => {
-          const teamCount = parseInt(def.teamCount)
-          if (!Number.isInteger(teamCount) || def.active === false) return
-          lastActiveIndexByTeamCount.set(teamCount, index)
-        })
-
-        definitionsToSave = definitions.map((def, index) => {
-          const teamCount = parseInt(def.teamCount)
-          if (!Number.isInteger(teamCount) || def.active === false) return def
-          return { ...def, active: lastActiveIndexByTeamCount.get(teamCount) === index }
-        })
-      }
-
-      const config = serializeConfig(definitionsToSave)
+      const config = serializeConfig(definitions)
       if (editing) {
         await updateGroupLogic(editing.id, { name, description, config })
-        setInfo(activeConflicts.length > 0 ? 'Lógica actualizada y definiciones activas ajustadas correctamente.' : 'Lógica actualizada correctamente.')
+        setInfo('Lógica actualizada correctamente.')
       } else {
         await createGroupLogic({ name, description, config })
-        setInfo(activeConflicts.length > 0 ? 'Lógica creada y definiciones activas ajustadas correctamente.' : 'Lógica creada correctamente.')
+        setInfo('Lógica creada correctamente.')
       }
       await load()
       window.dispatchEvent(new CustomEvent('group-logics-updated'))
@@ -764,7 +681,7 @@ export default function GroupLogicManager() {
 
   const handleEdit = (logic) => {
     setEditing(logic)
-    setReadOnlyMode(!!logic.isDefault)
+    setReadOnlyMode(!!logic.isDefault || !!readOnlyGlobal)
     setName(logic.name)
     setDescription(logic.description || '')
     setDefinitions(parseConfig(logic.config))
@@ -793,6 +710,7 @@ export default function GroupLogicManager() {
   }
 
   const handleDelete = async (logic) => {
+    if (readOnlyGlobal) return
     if (!window.confirm(`¿Eliminar la lógica "${logic.name}"?`)) return
     setError(null)
     setInfo(null)
@@ -834,7 +752,7 @@ export default function GroupLogicManager() {
   }
 
   const addDefinition = () => {
-    setDefinitions(prev => [...prev, emptyDefinition(getNextDefinitionNumber(prev))])
+    setDefinitions(prev => [...prev, emptyDefinition()])
   }
 
   const removeDefinition = (index) => {
@@ -842,8 +760,8 @@ export default function GroupLogicManager() {
   }
 
   const filteredDefinitions = useMemo(() => (
-    sortDefinitionsByTeamCount(definitions).filter((def, index) => {
-      const matchesDefinitionNumber = !definitionNumberFilter || String(def.definitionNumber || '').includes(definitionNumberFilter.trim())
+    definitions.filter((def, index) => {
+      const matchesDefinitionNumber = !definitionNumberFilter || String(index + 1).includes(definitionNumberFilter.trim())
       const matchesTeamCount = !teamCountFilter || String(def.teamCount || '').trim() === teamCountFilter.trim()
       return matchesDefinitionNumber && matchesTeamCount
     })
@@ -854,9 +772,11 @@ export default function GroupLogicManager() {
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <div className="card-title" style={{ marginBottom: 0 }}>🧠 Mantenimiento Lógica Grupos</div>
-          <button className={`btn btn-sm ${showForm ? 'btn-secondary' : 'btn-blue'}`} onClick={() => showForm ? resetForm() : setShowForm(true)}>
-            {showForm ? '✖ Cerrar' : '＋ Nueva Lógica'}
-          </button>
+          {!readOnlyGlobal && (
+            <button className={`btn btn-sm ${showForm ? 'btn-secondary' : 'btn-blue'}`} onClick={() => showForm ? resetForm() : setShowForm(true)}>
+              {showForm ? '✖ Cerrar' : '＋ Nueva Lógica'}
+            </button>
+          )}
         </div>
 
         {showForm && (
@@ -864,7 +784,7 @@ export default function GroupLogicManager() {
             <div className="form-row" style={{ alignItems: 'flex-end' }}>
               <div className="form-group" style={{ flex: 2 }}>
                 <label className="form-label">Nombre lógica</label>
-                <input className="form-input" value={name} onChange={e => setName(e.target.value)} required />
+                <input className="form-input" value={name} onChange={e => setName(e.target.value)} required readOnly={readOnlyMode} />
               </div>
               <div className="form-group" style={{ width: '180px' }}>
                 <label className="form-label">Por defecto</label>
@@ -877,10 +797,10 @@ export default function GroupLogicManager() {
 
             <div className="form-group">
               <label className="form-label">Descripción</label>
-              <input className="form-input" value={description} onChange={e => setDescription(e.target.value)} />
+              <input className="form-input" value={description} onChange={e => setDescription(e.target.value)} readOnly={readOnlyMode} />
             </div>
 
-            {!editing && (
+            {!editing && !readOnlyGlobal && (
               <div className="form-group">
                 <label className="form-label">Copiar definiciones de una lógica existente</label>
                 <select
@@ -898,7 +818,7 @@ export default function GroupLogicManager() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1rem 0 0.75rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <strong>Definiciones por número de jugadores</strong>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={addDefinition}>+ Añadir definición</button>
+              {!readOnlyMode && <button type="button" className="btn btn-secondary btn-sm" onClick={addDefinition}>+ Añadir definición</button>}
             </div>
 
             <div className="form-row" style={{ marginBottom: '1rem' }}>
@@ -929,15 +849,13 @@ export default function GroupLogicManager() {
             {filteredDefinitions.map((def) => {
               const index = definitions.indexOf(def)
               const teamCount = parseInt(def.teamCount)
-              const hasValidTeamCount = Number.isInteger(teamCount) && teamCount > 0
-              const duplicate = hasValidTeamCount && getDefinitionDuplicateCount(definitions, def.teamCount) > 1
-              const activeConflict = hasValidTeamCount && shouldShowActiveConflictWarning(definitions, index)
+              const duplicate = Number.isInteger(teamCount) && [...usedTeamCounts].filter(v => v === teamCount).length > 1
               const enabledPositionCount = getEnabledPositionCount(def.finals)
               return (
                 <div key={index} className="card" style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.03)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <strong>Definición {def.definitionNumber || index + 1}</strong>
-                    {definitions.length > 1 && (
+                    <strong>Definición {index + 1}</strong>
+                    {!readOnlyMode && definitions.length > 1 && (
                       <button type="button" className="btn btn-red btn-sm" onClick={() => removeDefinition(index)}>🗑️</button>
                     )}
                   </div>
@@ -952,6 +870,7 @@ export default function GroupLogicManager() {
                         value={def.teamCount}
                         onChange={e => updateDefinition(index, current => ({ ...current, teamCount: e.target.value }))}
                         required
+                        readOnly={readOnlyMode}
                       />
                       {duplicate && <span className="text-muted" style={{ color: '#f87171' }}>Ya existe otra definición con este número.</span>}
                     </div>
@@ -964,26 +883,10 @@ export default function GroupLogicManager() {
                         value={def.roundTripCount}
                         onChange={e => updateDefinition(index, current => ({ ...current, roundTripCount: e.target.value }))}
                         required
+                        readOnly={readOnlyMode}
                       />
                     </div>
-                    <div className="form-group" style={{ width: '160px' }}>
-                      <label className="form-label">Activa</label>
-                      <label className="form-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
-                        <span>{def.active !== false ? 'Sí' : 'No'}</span>
-                        <input
-                          type="checkbox"
-                          checked={def.active !== false}
-                          onChange={e => updateDefinition(index, current => ({ ...current, active: e.target.checked }))}
-                        />
-                      </label>
-                    </div>
                   </div>
-
-                  {activeConflict && (
-                    <div className="alert alert-warning" style={{ marginBottom: '0.9rem' }}>
-                      Hay otra definición activa para {def.teamCount || 'este número de'} jugadores. Si mantienes esta activa, la anterior se desactivará automáticamente.
-                    </div>
-                  )}
 
                   <div className="form-group">
                     <label className="form-label">Grupos</label>
@@ -998,6 +901,7 @@ export default function GroupLogicManager() {
                             value={def.groups[key]}
                             onChange={e => updateDefinition(index, current => ({ ...current, groups: { ...current.groups, [key]: e.target.value } }))}
                             style={{ width: '42px', padding: '0.38rem 0.2rem', textAlign: 'center' }}
+                            readOnly={readOnlyMode}
                           />
                         </div>
                       ))}
@@ -1028,6 +932,7 @@ export default function GroupLogicManager() {
                               }))
                             }}
                             style={{ textAlign: 'center' }}
+                            readOnly={readOnlyMode}
                           />
                         </div>
                       ))}
@@ -1053,6 +958,7 @@ export default function GroupLogicManager() {
                             type="checkbox"
                             checked={!!def.finals[key]}
                             onChange={e => updateDefinition(index, current => ({ ...current, finals: { ...current.finals, [key]: e.target.checked } }))}
+                            disabled={readOnlyMode}
                           />
                         </label>
                       ))}
@@ -1068,7 +974,7 @@ export default function GroupLogicManager() {
                           <input
                             className="form-input"
                             value={def.positions[idx]}
-                            disabled={idx >= enabledPositionCount}
+                            disabled={idx >= enabledPositionCount || readOnlyMode}
                             onChange={e => updateDefinition(index, current => {
                               const positions = [...current.positions]
                               positions[idx] = e.target.value
@@ -1116,8 +1022,8 @@ export default function GroupLogicManager() {
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button className="btn btn-blue btn-sm" onClick={() => handleOpenPreview(logic)}>Ver Bases</button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(logic)}>{locked ? '👁️' : '✏️'}</button>
-                      <button className="btn btn-red btn-sm" disabled={locked} onClick={() => handleDelete(logic)}>🗑️</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(logic)}>{locked || readOnlyGlobal ? '👁️' : '✏️'}</button>
+                      {!readOnlyGlobal && <button className="btn btn-red btn-sm" disabled={locked} onClick={() => handleDelete(logic)}>🗑️</button>}
                     </div>
                   </div>
                 </div>

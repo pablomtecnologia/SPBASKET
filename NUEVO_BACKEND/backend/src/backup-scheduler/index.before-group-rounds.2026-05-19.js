@@ -5,19 +5,8 @@ const { initMatches, allocateSchedules, splitIntoGroups, getGroupLayout } = requ
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 
 const app = express();
-const SESSION_TTL_DAYS = 14;
-const SESSION_IDLE_TIMEOUT_MINUTES = 2;
-const SUPERADMIN_SEED = {
-  username: 'admin',
-  firstName: 'Jon',
-  lastName1: 'Amayuelas',
-  lastName2: 'Celaya',
-  email: 'jon.amayuelas@hotmail.com',
-  password: 'Madrid2o3o#'
-};
 const DEFAULT_GROUP_LOGIC_NAME = 'LOGICA SPBASKET'
 const DEFAULT_GROUP_LOGIC_CONFIG = JSON.stringify({
   definitions: [
@@ -215,589 +204,6 @@ app.use((req, res, next) => {
 });
 const prisma = new PrismaClient();
 
-function normalizeText(value) {
-  return String(value || '').trim();
-}
-
-function normalizeEmail(value) {
-  return normalizeText(value).toLowerCase();
-}
-
-function normalizeDni(value) {
-  return String(value || '')
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, '')
-    .replace(/-/g, '');
-}
-
-function parseIdList(values) {
-  return [...new Set((Array.isArray(values) ? values : [])
-    .map(value => parseInt(value))
-    .filter(Number.isInteger)
-  )];
-}
-
-function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
-}
-
-function validateUsername(username) {
-  return /^[a-zA-Z0-9._-]{3,32}$/.test(String(username || ''));
-}
-
-function validatePasswordStrength(password) {
-  const raw = String(password || '');
-  return raw.length >= 8;
-}
-
-async function validateTournamentAssignments(tournamentIds) {
-  if (!tournamentIds.length) return [];
-  const tournaments = await prisma.tournament.findMany({
-    where: { id: { in: tournamentIds } },
-    select: { id: true, name: true }
-  });
-  if (tournaments.length !== tournamentIds.length) {
-    const foundIds = new Set(tournaments.map(tournament => tournament.id));
-    const missingIds = tournamentIds.filter(id => !foundIds.has(id));
-    const error = new Error(`Hay torneos no válidos en la asignación: ${missingIds.join(', ')}`);
-    error.status = 400;
-    throw error;
-  }
-  return tournaments;
-}
-
-async function cleanupExpiredSessions() {
-  const now = new Date();
-  const idleCutoff = new Date(now.getTime() - SESSION_IDLE_TIMEOUT_MINUTES * 60 * 1000);
-  await prisma.userSession.deleteMany({
-    where: {
-      OR: [
-        { expiresAt: { lt: now } },
-        { lastSeenAt: { lt: idleCutoff } }
-      ]
-    }
-  });
-}
-
-function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
-  const normalized = String(password || '');
-  const hash = crypto.scryptSync(normalized, salt, 64).toString('hex');
-  return { salt, hash };
-}
-
-function verifyPassword(password, salt, expectedHash) {
-  const candidate = crypto.scryptSync(String(password || ''), String(salt || ''), 64).toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(candidate, 'hex'), Buffer.from(String(expectedHash || ''), 'hex'));
-}
-
-function createSessionToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-function hashSessionToken(token) {
-  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
-}
-
-function getAuthToken(req) {
-  const header = req.headers.authorization || '';
-  if (!header.startsWith('Bearer ')) return null;
-  return header.slice(7).trim() || null;
-}
-
-function getClientIp(req) {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  const rawIp = Array.isArray(forwardedFor)
-    ? forwardedFor[0]
-    : String(forwardedFor || '').split(',')[0].trim() || req.socket?.remoteAddress || '';
-  return String(rawIp || '').trim();
-}
-
-function maskApproximateIp(ip) {
-  const value = String(ip || '').trim();
-  if (!value) return null;
-  if (value.includes('.')) {
-    const parts = value.split('.');
-    if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.xxx`;
-  }
-  if (value.includes(':')) {
-    const parts = value.split(':').filter(Boolean);
-    if (parts.length >= 2) return `${parts.slice(0, 2).join(':')}::`;
-    return 'ipv6';
-  }
-  return value;
-}
-
-function getApproximateSessionIp(req) {
-  return maskApproximateIp(getClientIp(req));
-}
-
-function normalizeUserAgent(req) {
-  return normalizeText(req.headers['user-agent'] || '').slice(0, 300) || null;
-}
-
-function safeJsonStringify(value) {
-  try {
-    return JSON.stringify(value ?? null);
-  } catch (_) {
-    return JSON.stringify({ error: 'metadata_unserializable' });
-  }
-}
-
-const AUDIT_EVENT_RESULTS = {
-  SUCCESS: 'success',
-  VALIDATION_REJECTED: 'validation_rejected',
-  PERMISSION_REJECTED: 'permission_rejected'
-};
-
-function normalizeAuditEventResult(value) {
-  if (value === AUDIT_EVENT_RESULTS.VALIDATION_REJECTED) return AUDIT_EVENT_RESULTS.VALIDATION_REJECTED;
-  if (value === AUDIT_EVENT_RESULTS.PERMISSION_REJECTED) return AUDIT_EVENT_RESULTS.PERMISSION_REJECTED;
-  return AUDIT_EVENT_RESULTS.SUCCESS;
-}
-
-async function createAuditEvent({
-  eventType,
-  result = AUDIT_EVENT_RESULTS.SUCCESS,
-  entityType,
-  entityId = null,
-  actorUser = null,
-  targetUser = null,
-  tournament = null,
-  req = null,
-  reason = null,
-  details = null,
-  metadata = null
-}) {
-  try {
-    await prisma.auditEvent.create({
-      data: {
-        eventType,
-        result: normalizeAuditEventResult(result),
-        entityType,
-        entityId: entityId !== null && entityId !== undefined ? String(entityId) : null,
-        actorUserId: actorUser?.id || null,
-        actorUsername: actorUser?.username || null,
-        targetUserId: targetUser?.id || null,
-        targetUsername: targetUser?.username || null,
-        tournamentId: tournament?.id || null,
-        tournamentName: tournament?.name || null,
-        ipAddress: req ? getApproximateSessionIp(req) : null,
-        userAgent: req ? normalizeUserAgent(req) : null,
-        reason: reason ? String(reason).slice(0, 500) : null,
-        details: details ? String(details).slice(0, 2000) : null,
-        metadata: metadata !== undefined ? safeJsonStringify(metadata) : null
-      }
-    });
-  } catch (error) {
-    console.error('Audit event error:', error);
-  }
-}
-
-async function rejectWithAudit(res, {
-  status = 400,
-  error,
-  eventType,
-  entityType,
-  entityId = null,
-  actorUser = null,
-  targetUser = null,
-  tournament = null,
-  req = null,
-  reason = null,
-  details = null,
-  metadata = null
-}) {
-  await createAuditEvent({
-    eventType,
-    result: status === 401 || status === 403
-      ? AUDIT_EVENT_RESULTS.PERMISSION_REJECTED
-      : AUDIT_EVENT_RESULTS.VALIDATION_REJECTED,
-    entityType,
-    entityId,
-    actorUser,
-    targetUser,
-    tournament,
-    req,
-    reason: reason || error,
-    details,
-    metadata
-  });
-  return res.status(status).json({ error });
-}
-
-function summarizeTournamentAssignments(assignments = []) {
-  return assignments.map(access => ({
-    tournamentId: access.tournamentId,
-    tournamentName: access.tournament?.name || null
-  }));
-}
-
-function sanitizeUser(user) {
-  if (!user) return null;
-  return {
-    id: user.id,
-    username: user.username,
-    firstName: user.firstName,
-    lastName1: user.lastName1,
-    lastName2: user.lastName2,
-    email: user.email,
-    isSuperAdmin: !!user.isSuperAdmin,
-    active: !!user.active,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-    sessionCount: Array.isArray(user.sessions) ? user.sessions.length : undefined,
-    sessions: Array.isArray(user.sessions)
-      ? user.sessions.map(session => ({
-          id: session.id,
-          createdAt: session.createdAt,
-          expiresAt: session.expiresAt,
-          lastSeenAt: session.lastSeenAt,
-          ipAddress: session.ipAddress || null,
-          userAgent: session.userAgent || null
-        }))
-      : undefined,
-    tournamentAccesses: Array.isArray(user.tournamentAccesses)
-      ? user.tournamentAccesses.map(access => ({
-          id: access.id,
-          tournamentId: access.tournamentId,
-          tournament: access.tournament
-            ? { id: access.tournament.id, name: access.tournament.name }
-            : undefined
-        }))
-      : undefined
-  };
-}
-
-function isPublicApiRequest(req) {
-  const key = `${req.method.toUpperCase()} ${req.path}`;
-  const publicPatterns = [
-    /^GET \/health$/,
-    /^GET \/images-list$/,
-    /^GET \/auth\/me$/,
-    /^POST \/auth\/login$/,
-    /^POST \/auth\/logout$/,
-    /^GET \/tournaments$/,
-    /^GET \/tournaments\/active$/,
-    /^GET \/tournaments\/\d+$/,
-    /^GET \/tournaments\/\d+\/categories$/,
-    /^GET \/categories\/\d+\/teams$/,
-    /^GET \/tournaments\/\d+\/matches$/,
-    /^GET \/tournaments\/\d+\/schedule$/,
-    /^GET \/categories\/\d+\/standings$/,
-    /^GET \/categories\/\d+\/final-ranking$/,
-    /^GET \/matches\/active\/\d+\/.+$/,
-    /^GET \/tournaments\/\d+\/matches\/logs\/\d+$/,
-    /^GET \/tournaments\/\d+\/officials$/,
-    /^POST \/matches\/\d+\/join$/,
-    /^POST \/matches\/\d+\/exit$/,
-    /^PUT \/matches\/\d+\/score$/,
-    /^PUT \/matches\/\d+\/activate$/,
-  ];
-  return publicPatterns.some(pattern => pattern.test(key));
-}
-
-async function resolveAuthenticatedUser(req) {
-  const token = getAuthToken(req);
-  if (!token) return null;
-
-  const tokenHash = hashSessionToken(token);
-  const session = await prisma.userSession.findUnique({
-    where: { tokenHash },
-    include: {
-      user: {
-        include: {
-          tournamentAccesses: {
-            include: {
-              tournament: { select: { id: true, name: true } }
-            }
-          }
-        }
-      }
-    }
-  });
-
-  if (!session) return null;
-  const now = new Date();
-  const idleCutoff = new Date(now.getTime() - SESSION_IDLE_TIMEOUT_MINUTES * 60 * 1000);
-  if (session.expiresAt < now || session.lastSeenAt < idleCutoff) {
-    await prisma.userSession.delete({ where: { id: session.id } }).catch(() => {});
-    return null;
-  }
-  if (!session.user?.active) return null;
-  await prisma.userSession.update({
-    where: { id: session.id },
-    data: {
-      lastSeenAt: now,
-      ipAddress: getApproximateSessionIp(req),
-      userAgent: normalizeUserAgent(req)
-    }
-  }).catch(() => {});
-  return session.user;
-}
-
-async function ensureTournamentAccess(user, tournamentId) {
-  if (!user) throw new Error('Debes iniciar sesión.');
-  if (user.isSuperAdmin) return;
-
-  const access = await prisma.userTournamentAccess.findUnique({
-    where: {
-      userId_tournamentId: {
-        userId: user.id,
-        tournamentId: parseInt(tournamentId)
-      }
-    }
-  });
-
-  if (!access) {
-    const error = new Error('No tienes acceso a este torneo.');
-    error.status = 403;
-    throw error;
-  }
-}
-
-async function ensureCategoryAccess(user, categoryId) {
-  const category = await prisma.category.findUnique({
-    where: { id: parseInt(categoryId) },
-    select: { tournamentId: true }
-  });
-  if (!category) {
-    const error = new Error('Categoría no encontrada.');
-    error.status = 404;
-    throw error;
-  }
-  await ensureTournamentAccess(user, category.tournamentId);
-  return category;
-}
-
-async function ensureTeamAccess(user, teamId) {
-  const team = await prisma.team.findUnique({
-    where: { id: parseInt(teamId) },
-    select: { category: { select: { tournamentId: true } } }
-  });
-  if (!team?.category?.tournamentId) {
-    const error = new Error('Equipo no encontrado.');
-    error.status = 404;
-    throw error;
-  }
-  await ensureTournamentAccess(user, team.category.tournamentId);
-  return team;
-}
-
-async function ensurePlayerAccess(user, playerId) {
-  const player = await prisma.player.findUnique({
-    where: { id: parseInt(playerId) },
-    select: { team: { select: { category: { select: { tournamentId: true } } } } }
-  });
-  const tournamentId = player?.team?.category?.tournamentId;
-  if (!tournamentId) {
-    const error = new Error('Jugador no encontrado.');
-    error.status = 404;
-    throw error;
-  }
-  await ensureTournamentAccess(user, tournamentId);
-  return player;
-}
-
-async function ensureMatchAccess(user, matchId) {
-  const match = await prisma.match.findUnique({
-    where: { id: parseInt(matchId) },
-    select: { category: { select: { tournamentId: true } } }
-  });
-  const tournamentId = match?.category?.tournamentId;
-  if (!tournamentId) {
-    const error = new Error('Partido no encontrado.');
-    error.status = 404;
-    throw error;
-  }
-  await ensureTournamentAccess(user, tournamentId);
-  return match;
-}
-
-async function ensureScheduleSlotAccess(user, slotId) {
-  const slot = await prisma.scheduleSlot.findUnique({
-    where: { id: parseInt(slotId) },
-    select: { tournamentId: true }
-  });
-  if (!slot?.tournamentId) {
-    const error = new Error('Slot no encontrado.');
-    error.status = 404;
-    throw error;
-  }
-  await ensureTournamentAccess(user, slot.tournamentId);
-  return slot;
-}
-
-function ensureSuperAdmin(user) {
-  if (!user?.isSuperAdmin) {
-    const error = new Error('Esta acción requiere superadministrador.');
-    error.status = 403;
-    throw error;
-  }
-}
-
-function ensurePrimarySuperAdmin(user) {
-  ensureSuperAdmin(user);
-  if (user?.username !== SUPERADMIN_SEED.username) {
-    const error = new Error('Esta acciÃ³n estÃ¡ reservada al usuario admin principal.');
-    error.status = 403;
-    throw error;
-  }
-}
-
-function getPathMatch(pathname, pattern) {
-  const match = String(pathname || '').match(pattern);
-  return match?.[1] ? parseInt(match[1], 10) : null;
-}
-
-async function getSensitiveAuditContextFromRequest(req) {
-  const method = String(req.method || 'GET').toUpperCase();
-  const apiPath = String(req.path || '');
-
-  if (method === 'POST' && apiPath === '/auth/login') {
-    return {
-      eventType: 'auth.login',
-      entityType: 'session',
-      details: `Intento de login para ${normalizeText(req.body?.username) || 'usuario no informado'}`
-    };
-  }
-
-  if (/^\/users\/\d+\/sessions\/close-all$/.test(apiPath)) {
-    return { eventType: 'session.close_all', entityType: 'session' };
-  }
-  if (/^\/users\/\d+\/sessions\/close-others$/.test(apiPath)) {
-    return { eventType: 'session.close_others', entityType: 'session' };
-  }
-  if (method === 'POST' && apiPath === '/users') {
-    return { eventType: 'user.create', entityType: 'user' };
-  }
-  if (method === 'PUT' && /^\/users\/\d+$/.test(apiPath)) {
-    return {
-      eventType: 'user.update',
-      entityType: 'user',
-      entityId: getPathMatch(apiPath, /^\/users\/(\d+)(?:\/|$)/)
-    };
-  }
-  if (method === 'DELETE' && /^\/users\/\d+$/.test(apiPath)) {
-    return {
-      eventType: 'user.delete',
-      entityType: 'user',
-      entityId: getPathMatch(apiPath, /^\/users\/(\d+)(?:\/|$)/)
-    };
-  }
-  if (method === 'POST' && apiPath === '/group-logics') {
-    return { eventType: 'group_logic.create', entityType: 'group_logic' };
-  }
-  if (method === 'PUT' && /^\/group-logics\/\d+$/.test(apiPath)) {
-    return {
-      eventType: 'group_logic.update',
-      entityType: 'group_logic',
-      entityId: getPathMatch(apiPath, /^\/group-logics\/(\d+)(?:\/|$)/)
-    };
-  }
-  if (method === 'DELETE' && /^\/group-logics\/\d+$/.test(apiPath)) {
-    return {
-      eventType: 'group_logic.delete',
-      entityType: 'group_logic',
-      entityId: getPathMatch(apiPath, /^\/group-logics\/(\d+)(?:\/|$)/)
-    };
-  }
-  if (method === 'POST' && apiPath === '/tournaments') {
-    return { eventType: 'tournament.create', entityType: 'tournament' };
-  }
-  if ((method === 'PUT' || method === 'DELETE') && /^\/tournaments\/\d+$/.test(apiPath)) {
-    const tournamentId = getPathMatch(apiPath, /^\/tournaments\/(\d+)(?:\/|$)/);
-    const tournament = tournamentId
-      ? await prisma.tournament.findUnique({ where: { id: tournamentId }, select: { id: true, name: true } })
-      : null;
-    return {
-      eventType: method === 'PUT' ? 'tournament.update' : 'tournament.delete',
-      entityType: 'tournament',
-      entityId: tournamentId,
-      tournament
-    };
-  }
-
-  return null;
-}
-
-async function authorizeManagementRequest(req) {
-  if (isPublicApiRequest(req)) return;
-  if (!req.authUser) {
-    const error = new Error('Debes iniciar sesiÃ³n para acceder a la administraciÃ³n.');
-    error.status = 401;
-    throw error;
-  }
-
-  const method = req.method.toUpperCase();
-  const apiPath = req.path;
-
-  if (/^\/audit-events(?:\/|$)/.test(apiPath)) {
-    ensureSuperAdmin(req.authUser);
-    return;
-  }
-
-  if (/^\/users(?:\/|$)/.test(apiPath)) {
-    if (/^\/users\/session-closures$/.test(apiPath)) ensurePrimarySuperAdmin(req.authUser);
-    else ensureSuperAdmin(req.authUser);
-    return;
-  }
-
-  if (/^\/group-logics(?:\/|$)/.test(apiPath)) {
-    ensureSuperAdmin(req.authUser);
-    return;
-  }
-
-  if (/^\/tournaments$/.test(apiPath)) {
-    if (method !== 'GET') ensureSuperAdmin(req.authUser);
-    return;
-  }
-
-  if (/^\/tournaments\/\d+\/clone$/.test(apiPath)) {
-    ensureSuperAdmin(req.authUser);
-    return;
-  }
-
-  const tournamentId =
-    getPathMatch(apiPath, /^\/tournaments\/(\d+)(?:\/|$)/) ??
-    getPathMatch(apiPath, /^\/matches\/active\/(\d+)(?:\/|$)/);
-  if (tournamentId) {
-    await ensureTournamentAccess(req.authUser, tournamentId);
-    return;
-  }
-
-  const categoryId = getPathMatch(apiPath, /^\/categories\/(\d+)(?:\/|$)/);
-  if (categoryId) {
-    await ensureCategoryAccess(req.authUser, categoryId);
-    return;
-  }
-
-  const teamId =
-    getPathMatch(apiPath, /^\/teams\/(\d+)\/players(?:\/|$)/) ??
-    getPathMatch(apiPath, /^\/teams\/(\d+)(?:\/|$)/);
-  if (teamId) {
-    await ensureTeamAccess(req.authUser, teamId);
-    return;
-  }
-
-  const playerId = getPathMatch(apiPath, /^\/players\/(\d+)(?:\/|$)/);
-  if (playerId) {
-    await ensurePlayerAccess(req.authUser, playerId);
-    return;
-  }
-
-  const matchId = getPathMatch(apiPath, /^\/matches\/(\d+)(?:\/|$)/);
-  if (matchId) {
-    await ensureMatchAccess(req.authUser, matchId);
-    return;
-  }
-
-  const scheduleSlotId = getPathMatch(apiPath, /^\/schedule\/(\d+)(?:\/|$)/);
-  if (scheduleSlotId) {
-    await ensureScheduleSlotAccess(req.authUser, scheduleSlotId);
-  }
-}
-
 async function getCategoryManualGroupAssignment(categoryId) {
   const rows = await prisma.$queryRaw`
     SELECT manualGroupAssignment
@@ -855,73 +261,11 @@ function normalizeOfficialName(value) {
 
 app.use(cors());
 app.use(express.json());
-app.use(async (req, res, next) => {
-  try {
-    req.authUser = await resolveAuthenticatedUser(req);
-    next();
-  } catch (e) {
-    next(e);
-  }
-});
-app.use('/api', (req, res, next) => {
-  if (isPublicApiRequest(req)) return next();
-  if (!req.authUser) return res.status(401).json({ error: 'Debes iniciar sesión para acceder a la administración.' });
-  next();
-});
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
-app.use('/api', async (req, res, next) => {
-  try {
-    await authorizeManagementRequest(req);
-    return next();
-    if (isPublicApiRequest(req)) return next();
-    if (!req.authUser || req.authUser.isSuperAdmin) return next();
-
-    const method = req.method.toUpperCase();
-    const apiPath = req.path;
-    const superAdminOnlyPatterns = [
-      /^\/users(?:\/\d+)?$/,
-      /^\/group-logics(?:\/\d+)?$/,
-      /^\/tournaments$/,
-      /^\/tournaments\/\d+\/clone$/,
-    ];
-
-    const allowReadOnlyShared = method === 'GET' && (/^\/tournaments$/.test(apiPath) || /^\/group-logics(?:\/\d+)?$/.test(apiPath))
-    if (superAdminOnlyPatterns.some(pattern => pattern.test(apiPath)) && !allowReadOnlyShared) {
-      return res.status(403).json({ error: 'Esta acciÃ³n requiere superadministrador.' });
-    }
-
-    if (/^\/tournaments\/\d+$/.test(apiPath) && req.params.id) return next(await ensureTournamentAccess(req.authUser, req.params.id));
-    if (req.params.tid) return next(await ensureTournamentAccess(req.authUser, req.params.tid));
-    if (req.params.cid) return next(await ensureCategoryAccess(req.authUser, req.params.cid));
-    if (req.params.teamId) return next(await ensureTeamAccess(req.authUser, req.params.teamId));
-    if (/^\/teams\/\d+$/.test(apiPath) && req.params.id) return next(await ensureTeamAccess(req.authUser, req.params.id));
-    if (/^\/players\/\d+$/.test(apiPath) && req.params.id) return next(await ensurePlayerAccess(req.authUser, req.params.id));
-    if (/^\/matches\/\d+$/.test(apiPath) && req.params.id) return next(await ensureMatchAccess(req.authUser, req.params.id));
-    if (/^\/schedule\/\d+$/.test(apiPath) && req.params.id) return next(await ensureScheduleSlotAccess(req.authUser, req.params.id));
-
-    next();
-  } catch (e) {
-    if (e?.status === 401 || e?.status === 403) {
-      const auditContext = await getSensitiveAuditContextFromRequest(req);
-      if (auditContext) {
-        await createAuditEvent({
-          ...auditContext,
-          result: AUDIT_EVENT_RESULTS.PERMISSION_REJECTED,
-          actorUser: req.authUser || null,
-          req,
-          reason: e.message,
-          details: auditContext.details || `Acceso denegado a ${req.method} ${req.path}`
-        });
-      }
-    }
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Sirve el frontend (carpeta dist) en producción
 app.use(express.static(path.join(__dirname, '../../frontend/dist')));
@@ -936,35 +280,6 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage });
-
-async function ensureDefaultSuperAdmin() {
-  const existing = await prisma.user.findUnique({
-    where: { username: SUPERADMIN_SEED.username }
-  });
-
-  const credentials = hashPassword(SUPERADMIN_SEED.password, existing?.passwordSalt);
-  const payload = {
-    username: SUPERADMIN_SEED.username,
-    firstName: SUPERADMIN_SEED.firstName,
-    lastName1: SUPERADMIN_SEED.lastName1,
-    lastName2: SUPERADMIN_SEED.lastName2,
-    email: SUPERADMIN_SEED.email,
-    passwordHash: credentials.hash,
-    passwordSalt: credentials.salt,
-    isSuperAdmin: true,
-    active: true
-  };
-
-  if (!existing) {
-    await prisma.user.create({ data: payload });
-    return;
-  }
-
-  await prisma.user.update({
-    where: { id: existing.id },
-    data: payload
-  });
-}
 
 async function ensureDefaultGroupLogic() {
   let existing = await prisma.groupLogic.findFirst({ where: { isDefault: true } })
@@ -1008,26 +323,19 @@ function validateGroupLogicConfig(configString) {
   if (!parsed || typeof parsed !== 'object') throw new Error('Configuración de lógica inválida.')
   if (!Array.isArray(parsed.definitions)) throw new Error('La configuración debe incluir "definitions".')
 
-  const activeSeen = new Set()
+  const seen = new Set()
   for (const def of parsed.definitions) {
     const teamCount = parseInt(def.teamCount)
     if (!Number.isInteger(teamCount) || teamCount <= 0) throw new Error('Cada definición debe tener un número de jugadores válido.')
-    if (def.active !== false && activeSeen.has(teamCount)) throw new Error(`No puede haber dos definiciones activas para ${teamCount} jugadores en esta lógica.`)
-    if (def.active !== false) activeSeen.add(teamCount)
+    if (seen.has(teamCount)) throw new Error(`Ya existe una definición para ${teamCount} jugadores en esta lógica.`)
+    seen.add(teamCount)
   }
   return parsed
 }
 
 function parseLogicConfig(configString) {
   const parsed = JSON.parse(configString || '{}')
-  if (!Array.isArray(parsed.definitions)) return { definitions: [] }
-  return {
-    ...parsed,
-    definitions: parsed.definitions.map(def => ({
-      ...def,
-      active: def?.active !== false
-    }))
-  }
+  return Array.isArray(parsed.definitions) ? parsed : { definitions: [] }
 }
 
 function getEnabledBracketSize(finals = {}) {
@@ -1088,9 +396,9 @@ async function getCategoryLogicDefinition(categoryId) {
 
   const teamCount = await prisma.team.count({ where: { categoryId } })
   const config = parseLogicConfig(logic.config)
-  const definition = config.definitions.find(def => parseInt(def.teamCount) === teamCount && def.active !== false)
+  const definition = config.definitions.find(def => parseInt(def.teamCount) === teamCount)
   if (!definition) {
-    throw new Error(`La lógica "${logic.name}" no tiene ninguna definición activa para ${teamCount} jugadores.`)
+    throw new Error(`La lógica "${logic.name}" no tiene definición para ${teamCount} jugadores.`)
   }
 
   return { category, logic, definition, teamCount }
@@ -1129,714 +437,6 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // GROUP LOGICS
 // ─────────────────────────────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    await cleanupExpiredSessions();
-    const username = normalizeText(req.body?.username);
-    const password = String(req.body?.password || '');
-    if (!username || !password) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Usuario y password obligatorios.',
-        eventType: 'auth.login',
-        entityType: 'session',
-        req,
-        details: 'Intento de login sin usuario o password'
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { username },
-      include: {
-        tournamentAccesses: {
-          include: {
-            tournament: { select: { id: true, name: true } }
-          }
-        }
-      }
-    });
-
-    if (!user?.active || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
-      return rejectWithAudit(res, {
-        status: 401,
-        error: 'Credenciales inválidas.',
-        eventType: 'auth.login',
-        entityType: 'session',
-        targetUser: user || null,
-        req,
-        details: `Login rechazado para ${username}`,
-        metadata: { username }
-      });
-    }
-
-    const token = createSessionToken();
-    await prisma.userSession.deleteMany({
-      where: {
-        userId: user.id,
-        expiresAt: { lt: new Date(Date.now() + (SESSION_TTL_DAYS - 1) * 24 * 60 * 60 * 1000) }
-      }
-    });
-    await prisma.userSession.create({
-      data: {
-        tokenHash: hashSessionToken(token),
-        userId: user.id,
-        expiresAt: new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000),
-        lastSeenAt: new Date(),
-        ipAddress: getApproximateSessionIp(req),
-        userAgent: normalizeUserAgent(req)
-      }
-    });
-
-    await createAuditEvent({
-      eventType: 'auth.login',
-      entityType: 'session',
-      entityId: user.id,
-      actorUser: user,
-      targetUser: user,
-      req,
-      details: `Inicio de sesion de ${user.username}`,
-      metadata: {
-        isSuperAdmin: !!user.isSuperAdmin
-      }
-    });
-
-    res.json({ token, user: sanitizeUser(user) });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/api/auth/me', async (req, res) => {
-  if (!req.authUser) return res.status(401).json({ error: 'Sesión no válida.' });
-  res.json({ user: sanitizeUser(req.authUser) });
-});
-
-app.post('/api/auth/logout', async (req, res) => {
-  try {
-    const token = getAuthToken(req);
-    const actorUser = req.authUser || null;
-    if (token) {
-      await prisma.userSession.deleteMany({ where: { tokenHash: hashSessionToken(token) } });
-    }
-    await createAuditEvent({
-      eventType: 'auth.logout',
-      entityType: 'session',
-      entityId: actorUser?.id || null,
-      actorUser,
-      targetUser: actorUser,
-      req,
-      details: actorUser ? `Cierre de sesion de ${actorUser.username}` : 'Cierre de sesion sin usuario autenticado'
-    });
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get('/api/users', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    await cleanupExpiredSessions();
-    const users = await prisma.user.findMany({
-      include: {
-        sessions: {
-          orderBy: { lastSeenAt: 'desc' }
-        },
-        tournamentAccesses: {
-          include: {
-            tournament: { select: { id: true, name: true } }
-          }
-        }
-      },
-      orderBy: [
-        { isSuperAdmin: 'desc' },
-        { firstName: 'asc' },
-        { lastName1: 'asc' }
-      ]
-    });
-    res.json(users.map(sanitizeUser));
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
-app.post('/api/users', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const username = normalizeText(req.body?.username);
-    const firstName = normalizeText(req.body?.firstName);
-    const lastName1 = normalizeText(req.body?.lastName1);
-    const lastName2 = normalizeText(req.body?.lastName2) || null;
-    const email = normalizeEmail(req.body?.email);
-    const password = String(req.body?.password || '');
-    const isSuperAdmin = !!req.body?.isSuperAdmin;
-    const active = req.body?.active !== false;
-    const tournamentIds = parseIdList(req.body?.tournamentIds);
-
-    if (!username || !firstName || !lastName1 || !email || !password) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Usuario, nombre, apellido1, mail y password son obligatorios.',
-        eventType: 'user.create',
-        entityType: 'user',
-        actorUser: req.authUser,
-        req,
-        details: `Alta de usuario rechazada para ${username || email || 'sin identificar'}`
-      });
-    }
-    if (!validateUsername(username)) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El usuario debe tener entre 3 y 32 caracteres y solo usar letras, números, punto, guion o guion bajo.',
-        eventType: 'user.create',
-        entityType: 'user',
-        actorUser: req.authUser,
-        req,
-        details: `Alta de usuario rechazada por username inválido: ${username || 'sin username'}`
-      });
-    }
-    if (!validateEmail(email)) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El mail no tiene un formato válido.',
-        eventType: 'user.create',
-        entityType: 'user',
-        actorUser: req.authUser,
-        req,
-        details: `Alta de usuario rechazada por mail inválido: ${email || 'sin email'}`
-      });
-    }
-    if (!validatePasswordStrength(password)) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'La password debe tener al menos 8 caracteres.',
-        eventType: 'user.create',
-        entityType: 'user',
-        actorUser: req.authUser,
-        req,
-        details: `Alta de usuario rechazada por password débil para ${username}`
-      });
-    }
-    if (!isSuperAdmin && tournamentIds.length === 0) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Un usuario no superadministrador debe tener al menos un torneo asignado.',
-        eventType: 'user.create',
-        entityType: 'user',
-        actorUser: req.authUser,
-        req,
-        details: `Alta de usuario rechazada sin torneos para ${username}`
-      });
-    }
-
-    await validateTournamentAssignments(tournamentIds);
-
-    const credentials = hashPassword(password);
-    const created = await prisma.user.create({
-      data: {
-        username,
-        firstName,
-        lastName1,
-        lastName2,
-        email,
-        passwordHash: credentials.hash,
-        passwordSalt: credentials.salt,
-        isSuperAdmin,
-        active,
-        tournamentAccesses: isSuperAdmin ? undefined : {
-          create: tournamentIds.map(tournamentId => ({ tournamentId }))
-        }
-      },
-      include: {
-        sessions: {
-          orderBy: { lastSeenAt: 'desc' }
-        },
-        tournamentAccesses: {
-          include: {
-            tournament: { select: { id: true, name: true } }
-          }
-        }
-      }
-    });
-    await createAuditEvent({
-      eventType: 'user.create',
-      entityType: 'user',
-      entityId: created.id,
-      actorUser: req.authUser,
-      targetUser: created,
-      req,
-      details: `Usuario ${created.username} creado`,
-      metadata: {
-        active: !!created.active,
-        isSuperAdmin: !!created.isSuperAdmin,
-        tournaments: summarizeTournamentAssignments(created.tournamentAccesses)
-      }
-    });
-    res.status(201).json(sanitizeUser(created));
-  } catch (e) {
-    const isUniqueError = e?.code === 'P2002';
-    if (isUniqueError) {
-      await createAuditEvent({
-        eventType: 'user.create',
-        result: AUDIT_EVENT_RESULTS.VALIDATION_REJECTED,
-        entityType: 'user',
-        actorUser: req.authUser,
-        req,
-        reason: 'Ya existe un usuario o mail con ese valor.',
-        details: `Alta de usuario rechazada por duplicidad: ${normalizeText(req.body?.username) || normalizeEmail(req.body?.email) || 'sin identificar'}`
-      });
-    }
-    res.status(e.status || (isUniqueError ? 400 : 500)).json({ error: isUniqueError ? 'Ya existe un usuario o mail con ese valor.' : e.message });
-  }
-});
-
-app.put('/api/users/:id', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const userId = parseInt(req.params.id);
-    const existing = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        tournamentAccesses: {
-          include: {
-            tournament: { select: { id: true, name: true } }
-          }
-        }
-      }
-    });
-    if (!existing) return res.status(404).json({ error: 'Usuario no encontrado.' });
-    if (existing.username === SUPERADMIN_SEED.username && req.body?.isSuperAdmin === false) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El superadministrador principal no puede perder este permiso.',
-        eventType: 'user.update',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Edición rechazada: ${existing.username} no puede perder superadmin`
-      });
-    }
-    if (existing.id === req.authUser.id && req.body?.active === false) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'No puedes desactivar tu propio usuario mientras estás dentro.',
-        eventType: 'user.update',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Edición rechazada: ${existing.username} intentó desactivarse a sí mismo`
-      });
-    }
-
-    const username = normalizeText(req.body?.username);
-    const firstName = normalizeText(req.body?.firstName);
-    const lastName1 = normalizeText(req.body?.lastName1);
-    const lastName2 = normalizeText(req.body?.lastName2) || null;
-    const email = normalizeEmail(req.body?.email);
-    const password = String(req.body?.password || '');
-    const isSuperAdmin = !!req.body?.isSuperAdmin;
-    const active = req.body?.active !== false;
-    const tournamentIds = parseIdList(req.body?.tournamentIds);
-
-    if (!username || !firstName || !lastName1 || !email) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Usuario, nombre, apellido1 y mail son obligatorios.',
-        eventType: 'user.update',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Edición de usuario rechazada para ${existing.username}`
-      });
-    }
-    if (!validateUsername(username)) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El usuario debe tener entre 3 y 32 caracteres y solo usar letras, números, punto, guion o guion bajo.',
-        eventType: 'user.update',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Edición rechazada por username inválido: ${username || existing.username}`
-      });
-    }
-    if (!validateEmail(email)) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El mail no tiene un formato válido.',
-        eventType: 'user.update',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Edición rechazada por mail inválido en ${existing.username}`
-      });
-    }
-    if (password && !validatePasswordStrength(password)) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'La nueva password debe tener al menos 8 caracteres.',
-        eventType: 'user.update_password',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Cambio de password rechazado para ${existing.username}`
-      });
-    }
-    if (!isSuperAdmin && tournamentIds.length === 0) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Un usuario no superadministrador debe tener al menos un torneo asignado.',
-        eventType: 'user.update',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Edición rechazada sin torneos para ${existing.username}`
-      });
-    }
-
-    await validateTournamentAssignments(tournamentIds);
-
-    const credentials = password ? hashPassword(password) : null;
-    const updated = await prisma.$transaction(async (tx) => {
-      await tx.userTournamentAccess.deleteMany({ where: { userId } });
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          username,
-          firstName,
-          lastName1,
-          lastName2,
-          email,
-          isSuperAdmin,
-          active,
-          ...(credentials ? { passwordHash: credentials.hash, passwordSalt: credentials.salt } : {})
-        }
-      });
-      if (!isSuperAdmin && tournamentIds.length) {
-        await tx.userTournamentAccess.createMany({
-          data: tournamentIds.map(tournamentId => ({ userId, tournamentId }))
-        });
-      }
-      if (!active) {
-        await tx.userSession.deleteMany({ where: { userId } });
-      }
-      return tx.user.findUnique({
-        where: { id: userId },
-        include: {
-          sessions: {
-            orderBy: { lastSeenAt: 'desc' }
-          },
-          tournamentAccesses: {
-            include: {
-              tournament: { select: { id: true, name: true } }
-            }
-          }
-        }
-      });
-    });
-
-    await createAuditEvent({
-      eventType: password ? 'user.update_password' : 'user.update',
-      entityType: 'user',
-      entityId: updated.id,
-      actorUser: req.authUser,
-      targetUser: updated,
-      req,
-      details: `Usuario ${updated.username} actualizado`,
-      metadata: {
-        passwordChanged: !!password,
-        activeBefore: !!existing.active,
-        activeAfter: !!updated.active,
-        wasSuperAdmin: !!existing.isSuperAdmin,
-        isSuperAdmin: !!updated.isSuperAdmin,
-        previousTournaments: summarizeTournamentAssignments(existing.tournamentAccesses),
-        tournaments: summarizeTournamentAssignments(updated.tournamentAccesses)
-      }
-    });
-
-    res.json(sanitizeUser(updated));
-  } catch (e) {
-    const isUniqueError = e?.code === 'P2002';
-    if (isUniqueError) {
-      await createAuditEvent({
-        eventType: String(req.body?.password || '') ? 'user.update_password' : 'user.update',
-        result: AUDIT_EVENT_RESULTS.VALIDATION_REJECTED,
-        entityType: 'user',
-        entityId: req.params.id,
-        actorUser: req.authUser,
-        req,
-        reason: 'Ya existe un usuario o mail con ese valor.',
-        details: `Actualización de usuario rechazada por duplicidad: ${normalizeText(req.body?.username) || normalizeEmail(req.body?.email) || req.params.id}`
-      });
-    }
-    res.status(e.status || (isUniqueError ? 400 : 500)).json({ error: isUniqueError ? 'Ya existe un usuario o mail con ese valor.' : e.message });
-  }
-});
-
-app.delete('/api/users/:id', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const userId = parseInt(req.params.id);
-    const existing = await prisma.user.findUnique({ where: { id: userId } });
-    if (!existing) return res.status(404).json({ error: 'Usuario no encontrado.' });
-    if (existing.username === SUPERADMIN_SEED.username) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El superadministrador principal no se puede eliminar.',
-        eventType: 'user.delete',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Borrado rechazado del superadmin principal ${existing.username}`
-      });
-    }
-    if (existing.id === req.authUser.id) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'No puedes eliminar tu propio usuario mientras estás dentro.',
-        eventType: 'user.delete',
-        entityType: 'user',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Borrado rechazado del propio usuario ${existing.username}`
-      });
-    }
-    await prisma.user.delete({ where: { id: userId } });
-    await createAuditEvent({
-      eventType: 'user.delete',
-      entityType: 'user',
-      entityId: existing.id,
-      actorUser: req.authUser,
-      targetUser: existing,
-      req,
-      details: `Usuario ${existing.username} eliminado`
-    });
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
-app.post('/api/users/:id/sessions/close-all', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const userId = parseInt(req.params.id);
-    const existing = await prisma.user.findUnique({ where: { id: userId } });
-    if (!existing) return res.status(404).json({ error: 'Usuario no encontrado.' });
-
-    const reason = normalizeText(req.body?.reason);
-    if (!reason) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Debes indicar el motivo del cierre de sesiones.',
-        eventType: 'session.close_all',
-        entityType: 'session',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Cierre de sesiones rechazado sin motivo para ${existing.username}`
-      });
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      const deleted = await tx.userSession.deleteMany({ where: { userId } });
-      await tx.sessionClosureEvent.create({
-        data: {
-          targetUserId: userId,
-          adminUserId: req.authUser?.id || null,
-          closedSessionCount: deleted.count,
-          keepCurrentSession: false,
-          reason
-        }
-      });
-      return deleted;
-    });
-    await createAuditEvent({
-      eventType: 'session.close_all',
-      entityType: 'session',
-      entityId: existing.id,
-      actorUser: req.authUser,
-      targetUser: existing,
-      req,
-      reason,
-      details: `Cierre forzado de todas las sesiones de ${existing.username}`,
-      metadata: {
-        closedSessionCount: result.count,
-        keepCurrentSession: false
-      }
-    });
-    res.json({
-      ok: true,
-      closedSessions: result.count,
-      keptCurrentSession: false
-    });
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
-app.post('/api/users/:id/sessions/close-others', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const userId = parseInt(req.params.id);
-    const existing = await prisma.user.findUnique({ where: { id: userId } });
-    if (!existing) return res.status(404).json({ error: 'Usuario no encontrado.' });
-
-    const reason = normalizeText(req.body?.reason);
-    if (!reason) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'Debes indicar el motivo del cierre de sesiones.',
-        eventType: 'session.close_others',
-        entityType: 'session',
-        entityId: existing.id,
-        actorUser: req.authUser,
-        targetUser: existing,
-        req,
-        details: `Cierre de otras sesiones rechazado sin motivo para ${existing.username}`
-      });
-    }
-
-    const currentToken = getAuthToken(req);
-    const currentTokenHash = currentToken ? hashSessionToken(currentToken) : null;
-    const where = currentTokenHash && userId === req.authUser.id
-      ? { userId, NOT: { tokenHash: currentTokenHash } }
-      : { userId };
-
-    const result = await prisma.$transaction(async (tx) => {
-      const deleted = await tx.userSession.deleteMany({ where });
-      await tx.sessionClosureEvent.create({
-        data: {
-          targetUserId: userId,
-          adminUserId: req.authUser?.id || null,
-          closedSessionCount: deleted.count,
-          keepCurrentSession: true,
-          reason
-        }
-      });
-      return deleted;
-    });
-    await createAuditEvent({
-      eventType: 'session.close_others',
-      entityType: 'session',
-      entityId: existing.id,
-      actorUser: req.authUser,
-      targetUser: existing,
-      req,
-      reason,
-      details: `Cierre forzado de sesiones salvo la actual de ${existing.username}`,
-      metadata: {
-        closedSessionCount: result.count,
-        keepCurrentSession: true
-      }
-    });
-    res.json({
-      ok: true,
-      closedSessions: result.count,
-      keptCurrentSession: !!(currentTokenHash && userId === req.authUser.id)
-    });
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
-app.get('/api/audit-events', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const events = await prisma.auditEvent.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 200
-    });
-
-    res.json(events.map(event => ({
-      id: event.id,
-      createdAt: event.createdAt,
-      eventType: event.eventType,
-      result: event.result,
-      entityType: event.entityType,
-      entityId: event.entityId,
-      reason: event.reason,
-      details: event.details,
-      actorUser: event.actorUserId || event.actorUsername ? {
-        id: event.actorUserId,
-        username: event.actorUsername
-      } : null,
-      targetUser: event.targetUserId || event.targetUsername ? {
-        id: event.targetUserId,
-        username: event.targetUsername
-      } : null,
-      tournament: event.tournamentId || event.tournamentName ? {
-        id: event.tournamentId,
-        name: event.tournamentName
-      } : null,
-      ipAddress: event.ipAddress,
-      userAgent: event.userAgent,
-      metadata: event.metadata ? JSON.parse(event.metadata) : null
-    })));
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
-app.get('/api/users/session-closures', async (req, res) => {
-  try {
-    ensureSuperAdmin(req.authUser);
-    const events = await prisma.sessionClosureEvent.findMany({
-      include: {
-        targetUser: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName1: true
-          }
-        },
-        adminUser: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName1: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100
-    });
-
-    res.json(events.map(event => ({
-      id: event.id,
-      createdAt: event.createdAt,
-      closedSessionCount: event.closedSessionCount,
-      keepCurrentSession: !!event.keepCurrentSession,
-      reason: event.reason,
-      targetUser: event.targetUser,
-      adminUser: event.adminUser
-    })));
-  } catch (e) {
-    res.status(e.status || 500).json({ error: e.message });
-  }
-});
-
 app.get('/api/group-logics', async (req, res) => {
   try {
     await ensureDefaultGroupLogic()
@@ -1858,28 +458,8 @@ app.get('/api/group-logics', async (req, res) => {
 app.post('/api/group-logics', async (req, res) => {
   try {
     const { name, description, config } = req.body
-    if (!name?.trim()) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El nombre es obligatorio',
-        eventType: 'group_logic.create',
-        entityType: 'group_logic',
-        actorUser: req.authUser,
-        req,
-        details: 'Alta de lógica de grupos rechazada sin nombre'
-      })
-    }
-    if (!config?.trim()) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'La configuración es obligatoria',
-        eventType: 'group_logic.create',
-        entityType: 'group_logic',
-        actorUser: req.authUser,
-        req,
-        details: `Alta de lógica de grupos rechazada para ${name?.trim() || 'sin nombre'} sin configuración`
-      })
-    }
+    if (!name?.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' })
+    if (!config?.trim()) return res.status(400).json({ error: 'La configuración es obligatoria' })
 
     validateGroupLogicConfig(config)
 
@@ -1889,18 +469,6 @@ app.post('/api/group-logics', async (req, res) => {
         description: description?.trim() || null,
         config: config.trim(),
         isDefault: false
-      }
-    })
-    await createAuditEvent({
-      eventType: 'group_logic.create',
-      entityType: 'group_logic',
-      entityId: created.id,
-      actorUser: req.authUser,
-      req,
-      details: `Logica de grupos ${created.name} creada`,
-      metadata: {
-        name: created.name,
-        description: created.description
       }
     })
     res.status(201).json(created)
@@ -1917,44 +485,11 @@ app.put('/api/group-logics/:id', async (req, res) => {
       include: { _count: { select: { tournaments: true } } }
     })
     if (!logic) return res.status(404).json({ error: 'Lógica no encontrada' })
-    if (logic.isDefault) {
-      return rejectWithAudit(res, {
-        status: 403,
-        error: 'La lógica marcada como POR DEFECTO no se puede modificar.',
-        eventType: 'group_logic.update',
-        entityType: 'group_logic',
-        entityId: id,
-        actorUser: req.authUser,
-        req,
-        details: `Edición rechazada de lógica por defecto ${logic.name}`
-      })
-    }
+    if (logic.isDefault) return res.status(403).json({ error: 'La lógica marcada como POR DEFECTO no se puede modificar.' })
 
     const { name, description, config } = req.body
-    if (!name?.trim()) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El nombre es obligatorio',
-        eventType: 'group_logic.update',
-        entityType: 'group_logic',
-        entityId: id,
-        actorUser: req.authUser,
-        req,
-        details: `Edición de lógica rechazada sin nombre para ${logic.name}`
-      })
-    }
-    if (!config?.trim()) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'La configuración es obligatoria',
-        eventType: 'group_logic.update',
-        entityType: 'group_logic',
-        entityId: id,
-        actorUser: req.authUser,
-        req,
-        details: `Edición de lógica rechazada sin configuración para ${logic.name}`
-      })
-    }
+    if (!name?.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' })
+    if (!config?.trim()) return res.status(400).json({ error: 'La configuración es obligatoria' })
     validateGroupLogicConfig(config)
 
     const updated = await prisma.groupLogic.update({
@@ -1963,20 +498,6 @@ app.put('/api/group-logics/:id', async (req, res) => {
         name: name.trim(),
         description: description?.trim() || null,
         config: config.trim()
-      }
-    })
-    await createAuditEvent({
-      eventType: 'group_logic.update',
-      entityType: 'group_logic',
-      entityId: updated.id,
-      actorUser: req.authUser,
-      req,
-      details: `Logica de grupos ${updated.name} actualizada`,
-      metadata: {
-        previousName: logic.name,
-        name: updated.name,
-        previousDescription: logic.description,
-        description: updated.description
       }
     })
     res.json(updated)
@@ -1993,46 +514,10 @@ app.delete('/api/group-logics/:id', async (req, res) => {
       include: { _count: { select: { tournaments: true } } }
     })
     if (!logic) return res.status(404).json({ error: 'Lógica no encontrada' })
-    if (logic.isDefault) {
-      return rejectWithAudit(res, {
-        status: 403,
-        error: 'La lógica marcada como POR DEFECTO no se puede borrar.',
-        eventType: 'group_logic.delete',
-        entityType: 'group_logic',
-        entityId: id,
-        actorUser: req.authUser,
-        req,
-        details: `Borrado rechazado de lógica por defecto ${logic.name}`
-      })
-    }
-    if (logic._count.tournaments > 0) {
-      return rejectWithAudit(res, {
-        status: 403,
-        error: 'No se puede borrar una lógica asociada a torneos existentes.',
-        eventType: 'group_logic.delete',
-        entityType: 'group_logic',
-        entityId: id,
-        actorUser: req.authUser,
-        req,
-        details: `Borrado rechazado de lógica ${logic.name} por estar asociada a torneos`,
-        metadata: {
-          tournamentCount: logic._count.tournaments
-        }
-      })
-    }
+    if (logic.isDefault) return res.status(403).json({ error: 'La lógica marcada como POR DEFECTO no se puede borrar.' })
+    if (logic._count.tournaments > 0) return res.status(403).json({ error: 'No se puede borrar una lógica asociada a torneos existentes.' })
 
     await prisma.groupLogic.delete({ where: { id } })
-    await createAuditEvent({
-      eventType: 'group_logic.delete',
-      entityType: 'group_logic',
-      entityId: logic.id,
-      actorUser: req.authUser,
-      req,
-      details: `Logica de grupos ${logic.name} eliminada`,
-      metadata: {
-        name: logic.name
-      }
-    })
     res.json({ ok: true })
   } catch (e) {
     res.status(500).json({ error: e.message })
@@ -2609,15 +1094,7 @@ app.get('/api/matches/active/:tournamentId/:court', async (req, res) => {
 // ─────────────────────────────────────────────
 app.get('/api/tournaments', async (req, res) => {
   try {
-    const where = req.authUser && !req.authUser.isSuperAdmin
-      ? {
-          userAssignments: {
-            some: { userId: req.authUser.id }
-          }
-        }
-      : undefined;
     const tournaments = await prisma.tournament.findMany({
-      where,
       include: {
         categories: { include: { teams: { include: { _count: { select: { players: true } } } } } },
         jornadas: true,
@@ -2686,17 +1163,7 @@ function resolveRestRoundsBetweenMatches(value, fallback = 1) {
 app.post('/api/tournaments', async (req, res) => {
   try {
     const { name, date, venue, numCourts, matchDuration, matchPlayTime, jornadas, rules, contactInfo, locationInfo, generalInfo, eventPosterUrl, cafePosterUrl, sponsorsImageUrl, headerLogoUrl, backgroundLogoUrl, strictScheduleMode, monitorRefreshTime, assignOfficialsToCourt, groupLogicId } = req.body;
-    if (!name) {
-      return rejectWithAudit(res, {
-        status: 400,
-        error: 'El nombre es obligatorio',
-        eventType: 'tournament.create',
-        entityType: 'tournament',
-        actorUser: req.authUser,
-        req,
-        details: 'Alta de torneo rechazada sin nombre'
-      });
-    }
+    if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
     const resolvedGroupLogicId = await resolveTournamentGroupLogicId(groupLogicId)
 
     const mainDate = date || (jornadas && jornadas.length > 0 ? jornadas[0].date : null);
@@ -2704,28 +1171,12 @@ app.post('/api/tournaments', async (req, res) => {
     if (jornadas) {
       for (const j of jornadas) {
         if (j.startTime >= j.endTime) {
-          return rejectWithAudit(res, {
-            status: 400,
-            error: `En la jornada ${j.date}, la hora de fin debe ser posterior a la de inicio`,
-            eventType: 'tournament.create',
-            entityType: 'tournament',
-            actorUser: req.authUser,
-            req,
-            details: `Alta de torneo rechazada por jornada inválida en ${j.date}`
-          });
+          return res.status(400).json({ error: `En la jornada ${j.date}, la hora de fin debe ser posterior a la de inicio` });
         }
         const jornadaMatchDuration = j.matchDuration !== undefined ? parseInt(j.matchDuration) : (matchDuration !== undefined ? parseInt(matchDuration) : 15);
         const jornadaMatchPlayTime = j.matchPlayTime !== undefined ? parseInt(j.matchPlayTime) : (matchPlayTime !== undefined ? parseInt(matchPlayTime) : 10);
         if (jornadaMatchPlayTime > jornadaMatchDuration) {
-          return rejectWithAudit(res, {
-            status: 400,
-            error: `En la jornada ${j.date}, el tiempo de partido no puede ser mayor que la duración de la ronda`,
-            eventType: 'tournament.create',
-            entityType: 'tournament',
-            actorUser: req.authUser,
-            req,
-            details: `Alta de torneo rechazada por tiempos inválidos en ${j.date}`
-          });
+          return res.status(400).json({ error: `En la jornada ${j.date}, el tiempo de partido no puede ser mayor que la duración de la ronda` });
         }
       }
     }
@@ -2764,21 +1215,6 @@ app.post('/api/tournaments', async (req, res) => {
       },
       include: { jornadas: true, groupLogic: true }
     });
-    await createAuditEvent({
-      eventType: 'tournament.create',
-      entityType: 'tournament',
-      entityId: tournament.id,
-      actorUser: req.authUser,
-      tournament,
-      req,
-      details: `Torneo ${tournament.name} creado`,
-      metadata: {
-        name: tournament.name,
-        groupLogicId: tournament.groupLogicId,
-        groupLogicName: tournament.groupLogic?.name || null,
-        active: !!tournament.active
-      }
-    });
     res.status(201).json(tournament);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -2794,7 +1230,7 @@ app.put('/api/tournaments/:id', async (req, res) => {
       : undefined
     const currentTournament = await prisma.tournament.findUnique({
       where: { id: tournamentId },
-      include: { groupLogic: true }
+      select: { assignOfficialsToCourt: true, matchDuration: true, matchPlayTime: true }
     });
 
     // Si es solo una actualización de campos de info, no bloquear aunque haya calendario
@@ -2802,19 +1238,7 @@ app.put('/api/tournaments/:id', async (req, res) => {
 
     if (!isInfoOnlyUpdate) {
       const locked = await hasActiveSchedule(tournamentId);
-      if (locked) {
-        return rejectWithAudit(res, {
-          status: 423,
-          error: '🔒 TORNEO BLOQUEADO — No se puede modificar porque ya hay partidos programados',
-          eventType: 'tournament.update',
-          entityType: 'tournament',
-          entityId: tournamentId,
-          actorUser: req.authUser,
-          tournament: currentTournament,
-          req,
-          details: `Edición rechazada del torneo ${currentTournament?.name || tournamentId} por calendario activo`
-        });
-      }
+      if (locked) return res.status(423).json({ error: '🔒 TORNEO BLOQUEADO — No se puede modificar porque ya hay partidos programados' });
     }
 
     const mainDate = date || (jornadas && jornadas.length > 0 ? jornadas[0].date : null);
@@ -2822,32 +1246,12 @@ app.put('/api/tournaments/:id', async (req, res) => {
     if (jornadas) {
       for (const j of jornadas) {
         if (j.startTime >= j.endTime) {
-          return rejectWithAudit(res, {
-            status: 400,
-            error: `En la jornada ${j.date}, la hora de fin debe ser posterior a la de inicio`,
-            eventType: 'tournament.update',
-            entityType: 'tournament',
-            entityId: tournamentId,
-            actorUser: req.authUser,
-            tournament: currentTournament,
-            req,
-            details: `Edición rechazada del torneo ${currentTournament?.name || tournamentId} por jornada inválida en ${j.date}`
-          });
+          return res.status(400).json({ error: `En la jornada ${j.date}, la hora de fin debe ser posterior a la de inicio` });
         }
         const jornadaMatchDuration = j.matchDuration !== undefined ? parseInt(j.matchDuration) : (matchDuration !== undefined ? parseInt(matchDuration) : currentTournament?.matchDuration || 15);
         const jornadaMatchPlayTime = j.matchPlayTime !== undefined ? parseInt(j.matchPlayTime) : (matchPlayTime !== undefined ? parseInt(matchPlayTime) : currentTournament?.matchPlayTime || 10);
         if (jornadaMatchPlayTime > jornadaMatchDuration) {
-          return rejectWithAudit(res, {
-            status: 400,
-            error: `En la jornada ${j.date}, el tiempo de partido no puede ser mayor que la duración de la ronda`,
-            eventType: 'tournament.update',
-            entityType: 'tournament',
-            entityId: tournamentId,
-            actorUser: req.authUser,
-            tournament: currentTournament,
-            req,
-            details: `Edición rechazada del torneo ${currentTournament?.name || tournamentId} por tiempos inválidos en ${j.date}`
-          });
+          return res.status(400).json({ error: `En la jornada ${j.date}, el tiempo de partido no puede ser mayor que la duración de la ronda` });
         }
       }
     }
@@ -2987,25 +1391,6 @@ app.put('/api/tournaments/:id', async (req, res) => {
         },
       });
     });
-    await createAuditEvent({
-      eventType: 'tournament.update',
-      entityType: 'tournament',
-      entityId: tournament.id,
-      actorUser: req.authUser,
-      tournament,
-      req,
-      details: `Torneo ${tournament.name} actualizado`,
-      metadata: {
-        previousName: currentTournament?.name || null,
-        name: tournament.name,
-        previousGroupLogicId: currentTournament?.groupLogicId || null,
-        groupLogicId: tournament.groupLogicId,
-        previousGroupLogicName: currentTournament?.groupLogic?.name || null,
-        groupLogicName: tournament.groupLogic?.name || null,
-        assignOfficialsToCourt: !!tournament.assignOfficialsToCourt,
-        strictScheduleMode: !!tournament.strictScheduleMode
-      }
-    });
     res.json(tournament);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -3015,10 +1400,6 @@ app.put('/api/tournaments/:id', async (req, res) => {
 app.delete('/api/tournaments/:id', async (req, res) => {
   try {
     const tournamentId = parseInt(req.params.id);
-    const existingTournament = await prisma.tournament.findUnique({
-      where: { id: tournamentId },
-      select: { id: true, name: true }
-    });
 
     // Borrado manual en cascada para evitar bloqueos por Foreign Keys (Match -> Team)
     await prisma.$transaction([
@@ -3032,15 +1413,6 @@ app.delete('/api/tournaments/:id', async (req, res) => {
       prisma.tournament.delete({ where: { id: tournamentId } })
     ]);
 
-    await createAuditEvent({
-      eventType: 'tournament.delete',
-      entityType: 'tournament',
-      entityId: existingTournament?.id || tournamentId,
-      actorUser: req.authUser,
-      tournament: existingTournament,
-      req,
-      details: `Torneo ${existingTournament?.name || tournamentId} eliminado`
-    });
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -3174,7 +1546,6 @@ app.post('/api/tournaments/:id/clone', async (req, res) => {
                   data: team.players.map(p => ({
                     name: p.name,
                     lastName: p.lastName,
-                    dni: p.dni,
                     phone: p.phone,
                     birthDate: p.birthDate,
                     number: p.number,
@@ -3430,26 +1801,20 @@ app.post('/api/tournaments/:tid/bulk-import', async (req, res) => {
         };
       }
 
-      // Compatibilidad:
-      // Formato antiguo: bloques de 6 campos -> Nom, Ape1, Ape2, Movil, FecNac, Talla
-      // Formato nuevo: bloques de 7 campos -> Nom, Ape1, Ape2, Movil, DNI, FecNac, Talla
-      const usesExtendedPlayerFormat = r.length >= 36;
-      const playerBlockSize = usesExtendedPlayerFormat ? 7 : 6;
-      const playerStarts = [8, 8 + playerBlockSize, 8 + (playerBlockSize * 2), 8 + (playerBlockSize * 3)];
+      // Jugadores: P1(8-13), P2(14-19), P3(20-25), P4(26-31) (Grupos de 6 campos: Nom, Ape1, Ape2, Movil, FecNac, Talla)
+      const playerStarts = [8, 14, 20, 26];
       for (const start of playerStarts) {
         if (r.length < start + 1) continue;
         const pNom = (r[start] || '').trim();
         if (pNom) {
           const pApe1 = (r[start + 1] || '').trim();
           const pApe2 = (r[start + 2] || '').trim();
-          const dni = usesExtendedPlayerFormat ? normalizeDni(r[start + 4] || '') : '';
           categoryGroups[key].teams[teamKey].players.push({
             name: pNom,
             lastName: `${pApe1} ${pApe2}`.trim(),
-            dni: dni || null,
             phone: (r[start + 3] || '').trim(),
-            birthDate: (r[start + (usesExtendedPlayerFormat ? 5 : 4)] || '').trim(),
-            shirtSize: (r[start + (usesExtendedPlayerFormat ? 6 : 5)] || '').trim()
+            birthDate: (r[start + 4] || '').trim(),
+            shirtSize: (r[start + 5] || '').trim()
           });
         }
       }
@@ -3500,16 +1865,6 @@ app.post('/api/tournaments/:tid/bulk-import', async (req, res) => {
 
         // Control de máximo 4 jugadores por equipo en la importación
         for (const p of teamData.players) {
-          if (p.dni) {
-            const existingByDni = await prisma.player.findUnique({
-              where: { dni: p.dni }
-            });
-            if (existingByDni) {
-              results.warnings.push(`${p.name} ${p.lastName}: No importado (ya existe un jugador con DNI ${p.dni})`);
-              continue;
-            }
-          }
-
           const exists = await prisma.player.findFirst({
             where: { teamId: team.id, name: p.name, lastName: p.lastName }
           });
@@ -3627,19 +1982,13 @@ app.post('/api/categories/:cid/teams', async (req, res) => {
         contactPhone,
         contactEmail,
         categoryId: parseInt(req.params.cid),
-        players: players ? {
-          create: players.map(player => ({
-            ...player,
-            dni: normalizeDni(player?.dni) || null
-          }))
-        } : undefined,
+        players: players ? { create: players } : undefined,
       },
       include: { players: true },
     });
     res.status(201).json(team);
   } catch (e) {
-    const isUniqueError = e?.code === 'P2002';
-    res.status(isUniqueError ? 400 : 500).json({ error: isUniqueError ? 'Ya existe un jugador con ese DNI.' : e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -3686,7 +2035,6 @@ app.post('/api/categories/:cid/teams/bulk', async (req, res) => {
             create: t.players.map(p => ({
               name: p.name,
               lastName: p.lastName,
-              dni: normalizeDni(p.dni) || null,
               birthDate: p.birthDate,
               phone: p.phone,
               number: p.number,
@@ -3700,8 +2048,7 @@ app.post('/api/categories/:cid/teams/bulk', async (req, res) => {
     }
     res.status(201).json(created);
   } catch (e) {
-    const isUniqueError = e?.code === 'P2002';
-    res.status(isUniqueError ? 400 : 500).json({ error: isUniqueError ? 'Ya existe un jugador con ese DNI.' : e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -3761,22 +2108,20 @@ app.post('/api/teams/:teamId/players', async (req, res) => {
     const team = await prisma.team.findUnique({ where: { id: teamId }, include: { category: true } });
     if (!team) return res.status(404).json({ error: 'Equipo no encontrado' });
 
-    const { name, lastName, dni, birthDate, phone, number, shirtSize } = req.body;
-    const normalizedDni = normalizeDni(dni) || null;
+    const { name, lastName, birthDate, phone, number, shirtSize } = req.body;
 
     // Validación de edad
     const val = validatePlayerAge(birthDate, team.category.minAge, team.category.maxAge, team.category.isVeteran);
     if (val.error) return res.status(400).json({ error: val.error });
 
     const player = await prisma.player.create({
-      data: { name, lastName, dni: normalizedDni, birthDate, phone, shirtSize, teamId },
+      data: { name, lastName, birthDate, phone, shirtSize, teamId },
     });
     const responseData = { ...player, warning: val.warning || null };
     console.log(' -> Enviando respuesta creación:', responseData);
     res.status(201).json(responseData);
   } catch (e) {
-    const isUniqueError = e?.code === 'P2002';
-    res.status(isUniqueError ? 400 : 500).json({ error: isUniqueError ? 'Ya existe un jugador con ese DNI.' : e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -4353,8 +2698,7 @@ app.put('/api/players/:id', async (req, res) => {
     const existing = await prisma.player.findUnique({ where: { id }, include: { team: { include: { category: true } } } });
     if (!existing) return res.status(404).json({ error: 'Jugador no encontrado' });
 
-    const { name, lastName, dni, birthDate, phone, number, shirtSize } = req.body;
-    const normalizedDni = normalizeDni(dni) || null;
+    const { name, lastName, birthDate, phone, number, shirtSize } = req.body;
 
     // Validar edad
     const val = validatePlayerAge(birthDate, existing.team.category.minAge, existing.team.category.maxAge, existing.team.category.isVeteran);
@@ -4362,12 +2706,11 @@ app.put('/api/players/:id', async (req, res) => {
 
     const updated = await prisma.player.update({
       where: { id },
-      data: { name, lastName, dni: normalizedDni, birthDate, phone, number, shirtSize }
+      data: { name, lastName, birthDate, phone, number, shirtSize }
     });
     res.json({ ...updated, warning: val.warning || null });
   } catch (e) {
-    const isUniqueError = e?.code === 'P2002';
-    res.status(isUniqueError ? 400 : 500).json({ error: isUniqueError ? 'Ya existe un jugador con ese DNI.' : e.message });
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -4394,12 +2737,7 @@ app.get('/api/tournaments/:tid/matches', async (req, res) => {
   try {
     const matches = await prisma.match.findMany({
       where: { category: { tournamentId: parseInt(req.params.tid) } },
-      include: {
-        homeTeam: { include: { players: true } },
-        awayTeam: { include: { players: true } },
-        category: true,
-        scheduleSlot: true
-      },
+      include: { homeTeam: true, awayTeam: true, category: true, scheduleSlot: true },
       orderBy: { id: 'asc' },
     });
     res.json(matches);
@@ -4846,13 +3184,7 @@ app.post('/api/tournaments/:tid/schedule', async (req, res) => {
     const matchesToSchedule = await prisma.match.findMany({
       where: whereClause,
       include: { homeTeam: true, awayTeam: true, category: true },
-      orderBy: [
-        { round: 'asc' },
-        { groupRound: 'asc' },
-        { group: 'asc' },
-        { groupMatchOrder: 'asc' },
-        { id: 'asc' }
-      ],
+      orderBy: { round: 'asc' },
     });
 
     if (matchesToSchedule.length === 0) return res.status(400).json({ error: 'No hay partidos generados. Ejecuta primero la Fase 1.' });
@@ -4916,11 +3248,7 @@ app.get('/api/tournaments/:tid/schedule', async (req, res) => {
       where: { tournamentId: parseInt(req.params.tid) },
       include: {
         match: {
-          include: {
-            homeTeam: { include: { players: true } },
-            awayTeam: { include: { players: true } },
-            category: true
-          },
+          include: { homeTeam: true, awayTeam: true, category: true },
         },
       },
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }, { court: 'asc' }],
@@ -5095,15 +3423,10 @@ app.patch('/api/schedule/:id', async (req, res) => {
         }
       }
 
-      // Regla de margen entre fases consecutivas, gobernada por restRoundsBetweenMatches
+      // Regla de margen entre fases consecutivas (Ronda N y Ronda N+1)
       if (Math.abs(m.round - other.match.round) === 1) {
-        const otherRoundIndex = getRoundIndexForDateTime(other.date, other.startTime, tournament?.jornadas || []);
-        const hasRoundIndexGap = targetRoundIndex !== null && otherRoundIndex !== null;
-        if (
-          (hasRoundIndexGap && Math.abs(targetRoundIndex - otherRoundIndex) <= requiredRestRounds) ||
-          (!hasRoundIndexGap && isSameDay && timeDiff < (matchDuration * (requiredRestRounds + 1)))
-        ) {
-          return res.status(400).json({ error: `Margen insuficiente: Debe haber al menos ${requiredRestRounds} ronda(s) de descanso al cambiar de fase.` });
+        if (isSameDay && timeDiff < (matchDuration * 2)) {
+          return res.status(400).json({ error: `Margen insuficiente: Debe haber una franja de descanso al cambiar de fase (Ronda ${Math.min(m.round, other.match.round)} a ${Math.max(m.round, other.match.round)}).` });
         }
       }
 
@@ -5365,7 +3688,7 @@ app.get('/api/categories/:cid/final-ranking', async (req, res) => {
 // ─────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────
-Promise.all([ensureDefaultGroupLogic(), ensureDefaultSuperAdmin()])
+ensureDefaultGroupLogic()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`\n🏀 SPBASKET 3x3 Backend corriendo en http://localhost:${PORT}`);

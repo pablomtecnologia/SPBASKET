@@ -33,12 +33,89 @@ model Tournament {
   monitorRefreshTime    Int            @default(30)
   assignOfficialsToCourt Boolean       @default(false)
   groupLogicId          Int
+  userAssignments       UserTournamentAccess[]
   categories            Category[]
   jornadas              Jornada[]
   scheduleSlots         ScheduleSlot[]
   officials             Official[]
   courts                Court[]
   groupLogic            GroupLogic     @relation(fields: [groupLogicId], references: [id], onDelete: Restrict)
+}
+
+model User {
+  id                 Int                    @id @default(autoincrement())
+  username           String                 @unique
+  firstName          String
+  lastName1          String
+  lastName2          String?
+  email              String                 @unique
+  passwordHash       String
+  passwordSalt       String
+  isSuperAdmin       Boolean                @default(false)
+  active             Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  sessions           UserSession[]
+  sessionClosureEvents SessionClosureEvent[] @relation("ClosedSessionsUser")
+  forcedSessionClosures SessionClosureEvent[] @relation("ClosedByAdminUser")
+  auditEvents        AuditEvent[]           @relation("AuditActorUser")
+  tournamentAccesses UserTournamentAccess[]
+}
+
+model UserSession {
+  id           Int      @id @default(autoincrement())
+  tokenHash    String   @unique
+  userId       Int
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  lastSeenAt   DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SessionClosureEvent {
+  id                 Int      @id @default(autoincrement())
+  targetUserId       Int
+  adminUserId        Int?
+  closedSessionCount Int      @default(0)
+  keepCurrentSession Boolean  @default(false)
+  reason             String
+  createdAt          DateTime @default(now())
+  targetUser         User     @relation("ClosedSessionsUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+  adminUser          User?    @relation("ClosedByAdminUser", fields: [adminUserId], references: [id], onDelete: SetNull)
+}
+
+model AuditEvent {
+  id            Int      @id @default(autoincrement())
+  eventType     String
+  result        String   @default("success")
+  entityType    String
+  entityId      String?
+  actorUserId   Int?
+  actorUsername String?
+  targetUserId  Int?
+  targetUsername String?
+  tournamentId  Int?
+  tournamentName String?
+  ipAddress     String?
+  userAgent     String?
+  reason        String?
+  details       String?
+  metadata      String?
+  createdAt     DateTime @default(now())
+  actorUser     User?    @relation("AuditActorUser", fields: [actorUserId], references: [id], onDelete: SetNull)
+}
+
+model UserTournamentAccess {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  tournamentId Int
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tournamentId])
 }
 
 model GroupLogic {
@@ -88,6 +165,7 @@ model Player {
   id        Int     @id @default(autoincrement())
   name      String
   lastName  String?
+  dni       String? @unique
   phone     String?
   birthDate String?
   number    Int?
@@ -101,6 +179,8 @@ model Match {
   matchNumber  Int?
   group        String?
   round        Int           @default(1)
+  groupRound   Int?
+  groupMatchOrder Int?
   homeTeamId   Int?
   awayTeamId   Int?
   homeScore    Int?

@@ -10,76 +10,29 @@
  * @param {number} categoryId
  * @returns {Array} Array de objetos match (sin id, listos para insertar)
  */
-function buildRoundRobinPairings(teams) {
-  if (teams.length < 2) return []
-
-  const participants = [...teams]
-  if (participants.length % 2 === 1) participants.push(null)
-
-  const totalRounds = participants.length - 1
-  const half = participants.length / 2
-  const rotation = [...participants]
-  const rounds = []
-
-  for (let roundIndex = 0; roundIndex < totalRounds; roundIndex++) {
-    const pairings = []
-
-    for (let pairIndex = 0; pairIndex < half; pairIndex++) {
-      const left = rotation[pairIndex]
-      const right = rotation[rotation.length - 1 - pairIndex]
-      if (!left || !right) continue
-
-      pairings.push({
-        home: pairIndex % 2 === 0 ? left : right,
-        away: pairIndex % 2 === 0 ? right : left,
-      })
-    }
-
-    rounds.push(pairings)
-
-    const fixed = rotation[0]
-    const moving = rotation.slice(1)
-    moving.unshift(moving.pop())
-    rotation.splice(0, rotation.length, fixed, ...moving)
-  }
-
-  return rounds
-}
-
 function generateRoundRobin(teams, group, categoryId, roundTripCount = 1) {
-  const matches = []
-  const totalLegs = Math.max(1, parseInt(roundTripCount) || 1)
-  const baseRounds = buildRoundRobinPairings(teams)
-  const roundsPerLeg = baseRounds.length
+  const matches = [];
+  const totalRounds = Math.max(1, parseInt(roundTripCount) || 1);
 
-  for (let legIndex = 0; legIndex < totalLegs; legIndex++) {
-    const flipHomeAway = legIndex % 2 === 1
-
-    for (let roundIndex = 0; roundIndex < baseRounds.length; roundIndex++) {
-      const groupRound = (legIndex * roundsPerLeg) + roundIndex + 1
-      const pairings = baseRounds[roundIndex]
-
-      pairings.forEach((pairing, pairingIndex) => {
-        const homeTeam = flipHomeAway ? pairing.away : pairing.home
-        const awayTeam = flipHomeAway ? pairing.home : pairing.away
-
+  for (let round = 1; round <= totalRounds; round++) {
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        const isEvenRound = round % 2 === 0;
         matches.push({
           group,
           round: 1,
-          groupRound,
-          groupMatchOrder: pairingIndex + 1,
-          homeTeam: { connect: { id: homeTeam.id } },
-          awayTeam: { connect: { id: awayTeam.id } },
+          homeTeam: { connect: { id: isEvenRound ? teams[j].id : teams[i].id } },
+          awayTeam: { connect: { id: isEvenRound ? teams[i].id : teams[j].id } },
           homeScore: null,
           awayScore: null,
           status: 'pending',
           category: { connect: { id: categoryId } },
-        })
-      })
+        });
+      }
     }
   }
 
-  return matches
+  return matches;
 }
 
 function splitIntoGroups(teams, definition = null) {
@@ -310,19 +263,6 @@ function allocateSchedules(matches, config) {
     return g === 'final' || g.includes('tercer');
   };
 
-  const compareGroupPriority = (a, b) => {
-    const byGroupRound = (a.groupRound || 1) - (b.groupRound || 1)
-    if (byGroupRound !== 0) return byGroupRound
-
-    const byGroup = String(a.group || '').localeCompare(String(b.group || ''), undefined, { numeric: true, sensitivity: 'base' })
-    if (byGroup !== 0) return byGroup
-
-    const byMatchOrder = (a.groupMatchOrder || 1) - (b.groupMatchOrder || 1)
-    if (byMatchOrder !== 0) return byMatchOrder
-
-    return (a.id || 0) - (b.id || 0)
-  }
-
   let pendingMatches = matches.map(m => ({ ...m, priority: getPriority(m) }));
 
   const remainingPerCat = new Map();
@@ -335,7 +275,6 @@ function allocateSchedules(matches, config) {
   let currentMinute = parsedJornadas[0].startH;
   const teamsInSlot = new Map();
   const teamLastPlayedBucket = new Map();
-  const categoryLastPlayedBucket = new Map();
   const scheduledFinalSlots = [];
   let currentBucketIndex = 0;
 
@@ -404,27 +343,12 @@ function allocateSchedules(matches, config) {
           if (!isRested) continue;
 
           if (catsPlayingNow.has(m.categoryId) && catsPlayingNow.get(m.categoryId) !== m.priority) continue;
-
-          const lastCategoryPlayed = categoryLastPlayedBucket.get(m.categoryId);
-          const isCategoryPhaseTransitionBlocked =
-            !!lastCategoryPlayed &&
-            lastCategoryPlayed.priority !== m.priority &&
-            !hasRequiredRest(lastCategoryPlayed, currentJornada.date, currentBucketIndex, currentRequiredRestRounds);
-          if (isCategoryPhaseTransitionBlocked) continue;
+          if (catsWhoPlayedBefore.has(m.categoryId) && catsWhoPlayedBefore.get(m.categoryId) !== m.priority) continue;
 
           let score = 0;
           const catRemaining = remainingPerCat.get(m.categoryId) || 0;
           score += catRemaining * 100;
           if (catsWhoPlayedBefore.has(m.categoryId)) score += 50;
-          if (m.priority === 0) {
-            score -= (m.groupRound || 1) * 1000;
-            score -= (m.groupMatchOrder || 1) * 10;
-            const sameCategoryPosition = pendingMatches
-              .filter(other => other.categoryId === m.categoryId && other.priority === 0)
-              .sort(compareGroupPriority)
-              .findIndex(other => other.id === m.id);
-            score -= Math.max(0, sameCategoryPosition);
-          }
 
           // Favorecer cerrar categorías cuyas eliminatorias ya están desbloqueadas.
           score -= m.priority * 10;
@@ -468,11 +392,6 @@ function allocateSchedules(matches, config) {
           if (aId) teamsPlayingNow.add(aId);
           if (hId) teamLastPlayedBucket.set(hId, { date: currentJornada.date, bucketIndex: currentBucketIndex });
           if (aId) teamLastPlayedBucket.set(aId, { date: currentJornada.date, bucketIndex: currentBucketIndex });
-          categoryLastPlayedBucket.set(match.categoryId, {
-            date: currentJornada.date,
-            bucketIndex: currentBucketIndex,
-            priority: match.priority
-          });
           catsPlayingNow.set(match.categoryId, match.priority);
           remainingPerCat.set(match.categoryId, (remainingPerCat.get(match.categoryId) || 1) - 1);
 

@@ -3,7 +3,6 @@ import { useParams, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { getTournament, getCategories, getMatches, getSchedule, getStandings, getFinalRanking } from '../api'
 import GlobalTimer from './GlobalTimer'
 import TournamentBranding, { getTournamentHeaderLogo } from './TournamentBranding'
-import { resolveImageUrl } from '../utils/tournamentBranding'
 
 function BracketMatch({ match, large = false }) {
   const isWinner = (teamId) => {
@@ -240,7 +239,7 @@ function PublicInfo({ tournament }) {
           return (
             <div id={s.id} key={s.id} style={{ marginBottom: '1.5rem' }}>
               <img 
-                src={resolveImageUrl(tournament[s.key])} 
+                src={tournament[s.key]} 
                 alt={s.title} 
                 style={{ width: '100%', borderRadius: '12px', border: '1px solid var(--border)', display: 'block', boxShadow: 'var(--shadow)' }} 
               />

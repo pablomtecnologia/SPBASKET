@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   getCategories, createCategory, updateCategory, deleteCategory, bulkImport,
   getTeams, createTeam, updateTeam, deleteTeam, bulkCreateTeams,
@@ -7,12 +7,100 @@ import {
   getStandings, getFinalRanking, generateFinalPhase, updateScheduleSlot
 } from '../api'
 import { exportCategoryToExcel } from '../utils/exportCategoryExcel'
+import TeamRosterTooltip from './TeamRosterTooltip'
+import ValidationIssueTooltip from './ValidationIssueTooltip'
+import { getPlayerAgeIssue, getTeamAgeIssue, teamHasAgeIssue } from '../utils/playerAgeValidation'
 
 const COLORS = ['#f97316','#3b82f6','#22c55e','#a855f7','#ec4899','#14b8a6','#f59e0b','#ef4444','#06b6d4','#84cc16']
+const IMPORT_PLAYER_BLOCK_SIZE = 7
+const IMPORT_MAX_PLAYERS = 4
+const IMPORT_FIXED_COLUMNS = 8
+const IMPORT_TOTAL_COLUMNS = IMPORT_FIXED_COLUMNS + (IMPORT_PLAYER_BLOCK_SIZE * IMPORT_MAX_PLAYERS)
+
+const getTeamPlayersBadgeStyle = (count) => {
+  const total = Number.isInteger(count) ? count : 0
+  if (total >= 4) {
+    return {
+      background: 'rgba(34,197,94,0.18)',
+      color: '#86efac',
+      border: '1px solid rgba(34,197,94,0.45)'
+    }
+  }
+  if (total === 3) {
+    return {
+      background: 'rgba(59,130,246,0.18)',
+      color: '#93c5fd',
+      border: '1px solid rgba(59,130,246,0.45)'
+    }
+  }
+  if (total === 2) {
+    return {
+      background: 'rgba(245,158,11,0.18)',
+      color: '#fcd34d',
+      border: '1px solid rgba(245,158,11,0.45)'
+    }
+  }
+  if (total === 1) {
+    return {
+      background: 'rgba(249,115,22,0.18)',
+      color: '#fdba74',
+      border: '1px solid rgba(249,115,22,0.45)'
+    }
+  }
+  return {
+    background: 'rgba(239,68,68,0.16)',
+    color: '#fca5a5',
+    border: '1px solid rgba(239,68,68,0.4)'
+  }
+}
 
 const compareGroupNames = (a, b) => {
   const normalize = (value) => String(value || '').replace(/^Grupo\s+/i, '').trim()
   return normalize(a).localeCompare(normalize(b), undefined, { numeric: true, sensitivity: 'base' })
+}
+
+const getMatchRoundLabel = (match) => {
+  if (!match) return ''
+  if ((match.round || 1) > 1) return ''
+  const roundValue = match.groupRound || 1
+  const groupValue = match.group || 'Grupo A'
+  return `Ronda ${roundValue} (${groupValue})`
+}
+
+const compareCompetitionMatches = (a, b) => {
+  const byRound = (a.groupRound || 1) - (b.groupRound || 1)
+  if (byRound !== 0) return byRound
+
+  const byGroup = compareGroupNames(a.group || 'Grupo A', b.group || 'Grupo A')
+  if (byGroup !== 0) return byGroup
+
+  const byOrder = (a.groupMatchOrder || 1) - (b.groupMatchOrder || 1)
+  if (byOrder !== 0) return byOrder
+
+  return (a.matchNumber || 999999) - (b.matchNumber || 999999)
+}
+
+const getCompetitionRoundBucket = (match) => {
+  if ((match.round || 1) === 1) {
+    return {
+      phaseOrder: 0,
+      label: getMatchRoundLabel(match) || (match.group || 'Liga'),
+      roundNumber: match.groupRound || 1,
+    }
+  }
+
+  const groupName = String(match.group || '').toLowerCase()
+  if (groupName.includes('octavo')) return { phaseOrder: 1, label: 'Octavos', roundNumber: 0 }
+  if (groupName.includes('cuarto')) return { phaseOrder: 2, label: 'Cuartos', roundNumber: 0 }
+  if (groupName.includes('semi')) return { phaseOrder: 3, label: 'Semifinales', roundNumber: 0 }
+  if (groupName === 'final') return { phaseOrder: 4, label: 'Final', roundNumber: 0 }
+  if (groupName.includes('tercer')) return { phaseOrder: 5, label: '3y4 Puesto', roundNumber: 0 }
+
+  return {
+    phaseOrder: 99,
+    label: match.group || `Ronda ${match.round || 1}`,
+    roundNumber: match.round || 0,
+  }
 }
 
 const getManualGroupLayout = (teamCount) => {
@@ -35,6 +123,48 @@ const getManualGroupLayout = (teamCount) => {
   if (teamCount === 23) return [{ name: 'Grupo A', size: 6 }, { name: 'Grupo B', size: 6 }, { name: 'Grupo C', size: 6 }, { name: 'Grupo D', size: 5 }]
   if (teamCount === 24) return [{ name: 'Grupo A', size: 6 }, { name: 'Grupo B', size: 6 }, { name: 'Grupo C', size: 6 }, { name: 'Grupo D', size: 6 }]
   return [{ name: 'Grupo A', size: teamCount }]
+}
+
+const downloadCsvTemplate = (tournamentName) => {
+  const row = new Array(IMPORT_TOTAL_COLUMNS).fill('')
+  row[0] = 'EQUIPO EJEMPLO'
+  row[1] = 'BENJAMIN'
+  row[2] = 'MIXTO'
+  row[3] = 'ANA'
+  row[4] = 'GARCIA'
+  row[5] = 'LOPEZ'
+  row[6] = 'ana@example.com'
+  row[7] = '600111222'
+
+  const samplePlayers = [
+    ['LUCIA', 'PEREZ', 'MARTIN', '600123123', '12345678A', '2014-05-10', 'M'],
+    ['MARIO', 'SANCHEZ', 'RUIZ', '600456456', '23456789B', '2014-09-21', 'L'],
+    ['SOFIA', 'DIAZ', 'FERNANDEZ', '600789789', '34567890C', '2015-01-14', 'S']
+  ]
+
+  samplePlayers.forEach((player, idx) => {
+    const start = IMPORT_FIXED_COLUMNS + (idx * IMPORT_PLAYER_BLOCK_SIZE)
+    player.forEach((value, offset) => {
+      row[start + offset] = value
+    })
+  })
+
+  const csvContent = '\uFEFF' + row.join(';')
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  const filename = `${(tournamentName || 'TORNEO').toUpperCase().replace(/\s+/g, '_')}_PLANTILLA_IMPORTACION_CSV_${dd}-${mm}-${yyyy}.csv`
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 function GroupAssignmentPanel({ enabled, onToggle, teams, counts, layout, onChange, color }) {
@@ -129,7 +259,7 @@ function BracketMatch({ match, color = 'var(--accent)', large = false }) {
         display: 'flex',
         justifyContent: 'space-between'
       }}>
-        <span>{match.group}</span>
+        <span>{match.group} · {getMatchRoundLabel(match)}</span>
         {match.scheduleSlot && <span>🕒 {match.scheduleSlot.startTime}</span>}
       </div>
       <div style={{ padding: '0.6rem' }}>
@@ -210,6 +340,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
   // Matches & Standings (Moved Up)
   const [matches, setMatches] = useState([])
   const [allMatches, setAllMatches] = useState([])
+  const [competitionOrderMode, setCompetitionOrderMode] = useState('group')
   const [scores, setScores] = useState({})
   const [editingScoreIds, setEditingScoreIds] = useState([])
   const [standings, setStandings] = useState({ global: [], byGroup: {} })
@@ -240,16 +371,39 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
   // Player form
   const [pName, setPName] = useState('')
   const [pLastName, setPLastName] = useState('')
+  const [pDni, setPDni] = useState('')
   const [pPhone, setPPhone] = useState('')
   const [pBirthDate, setPBirthDate] = useState('')
   const [pShirtSize, setPShirtSize] = useState('')
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [detailEditMode, setDetailEditMode] = useState('player') // 'player' o 'contact'
+  const [hoveredCategoryId, setHoveredCategoryId] = useState(null)
+  const categoryHoverTimerRef = useRef(null)
 
 
 
 
   const clearMessages = () => { setError(null); setInfo(null); setWarning(null) }
+
+  const cancelCategoryHoverTimer = useCallback(() => {
+    if (categoryHoverTimerRef.current) {
+      clearTimeout(categoryHoverTimerRef.current)
+      categoryHoverTimerRef.current = null
+    }
+  }, [])
+
+  const handleCategoryMouseEnter = useCallback((categoryId) => {
+    cancelCategoryHoverTimer()
+    categoryHoverTimerRef.current = setTimeout(() => {
+      setHoveredCategoryId(categoryId)
+      categoryHoverTimerRef.current = null
+    }, 2000)
+  }, [cancelCategoryHoverTimer])
+
+  const handleCategoryMouseLeave = useCallback(() => {
+    cancelCategoryHoverTimer()
+    setHoveredCategoryId(null)
+  }, [cancelCategoryHoverTimer])
 
   const loadCategories = useCallback(async () => {
     try {
@@ -266,6 +420,8 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
   }, [tournament.id])
 
   useEffect(() => { loadCategories() }, [loadCategories])
+
+  useEffect(() => () => cancelCategoryHoverTimer(), [cancelCategoryHoverTimer])
 
   const loadTeams = useCallback(async () => {
     if (!activeCategory) return
@@ -312,6 +468,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
     // Al cambiar de categoría, reseteamos estados para evitar que se vean datos de la categoría anterior
     setMatches([])
     setTeams([])
+    setSelectedTeam(null)
     setStandings({ global: [], byGroup: {} })
     setFinalRanking([])
     clearMessages()
@@ -493,6 +650,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
       const data = {
         name: pName,
         lastName: pLastName,
+        dni: pDni,
         phone: pPhone,
         birthDate: pBirthDate,
         shirtSize: pShirtSize
@@ -528,7 +686,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
         setTeams(prev => prev.map(t => t.id === selectedTeam.id ? updatedTeam : t))
       }
       
-      setPName(''); setPLastName(''); setPPhone(''); setPBirthDate(''); setPShirtSize('');
+      setPName(''); setPLastName(''); setPDni(''); setPPhone(''); setPBirthDate(''); setPShirtSize('');
       loadCategories() // Actualizar contadores de jugadores
       if (onRefreshTournament) onRefreshTournament()
     } catch (e) { setError(e.message) }
@@ -540,6 +698,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
     setEditingPlayer(player)
     setPName(player.name)
     setPLastName(player.lastName || '')
+    setPDni(player.dni || '')
     setPPhone(player.phone || '')
     setPBirthDate(player.birthDate || '')
     setPShirtSize(player.shirtSize || '')
@@ -831,12 +990,17 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
           )}
           
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+              <button className="btn btn-blue btn-sm" type="button" onClick={() => downloadCsvTemplate(tournament.name)} title="Descargar plantilla CSV de importación">
+                Descargar Plantilla CSV
+              </button>
             <label className={`btn btn-secondary btn-sm`} style={{ cursor: hasAnyMatches ? 'not-allowed' : 'pointer', opacity: hasAnyMatches ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }} title={hasAnyMatches ? "🔒 Bloqueado: Ya hay partidos generados" : "Importar equipos por CSV"}>
               📂 Importar CSV Global
               {!hasAnyMatches && <input type="file" accept=".csv" onChange={handleCSVImport} style={{ display: 'none' }} />}
             </label>
+            </div>
             <div className="text-muted" style={{ fontSize: '0.6rem', marginTop: '0.2rem' }}>
-              Equipo;Cat;Gen;ContNom;Ape;Ape... J1(Nom;Ape1;Ape2;Movil;FecNac;Talla)...
+              Equipo;Cat;Gen;ContNom;Ape1;Ape2;Email;Movil... J1(Nom;Ape1;Ape2;Movil;DNI;FecNac;Talla)...
             </div>
           </div>
 
@@ -916,6 +1080,10 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
             <button
               key={cat.id}
               onClick={() => { setActiveCategory(cat); handleTabChange('equipos'); clearMessages() }}
+              onMouseEnter={() => handleCategoryMouseEnter(cat.id)}
+              onMouseLeave={handleCategoryMouseLeave}
+              onFocus={() => handleCategoryMouseEnter(cat.id)}
+              onBlur={handleCategoryMouseLeave}
               className="btn category-btn"
               style={{
                 background: activeCategory?.id === cat.id ? cat.color : 'var(--bg3)',
@@ -927,7 +1095,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
               }}
             >
               {/* Popup Informativo Ampliado */}
-              <div className="category-popup" style={{ '--cat-color': cat.color }}>
+              <div className={`category-popup ${hoveredCategoryId === cat.id ? 'visible' : ''}`} style={{ '--cat-color': cat.color }}>
                 <div className="category-popup-header">
                   <span className={hasMatches ? "color-dot" : "color-square"} style={{ background: cat.color, border: '1.5px solid rgba(0,0,0,0.8)', boxShadow: '0 0 0 1px rgba(255,255,255,0.1)' }} />
                   {cat.name}
@@ -1199,14 +1367,20 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                     </tr>
                   </thead>
                   <tbody>
-                    {teams.map((t, i) => (
+                    {teams.map((t, i) => {
+                      const hasInvalidAgePlayer = teamHasAgeIssue(t, activeCategory)
+                      const teamAgeIssue = getTeamAgeIssue(t, activeCategory)
+                      return (
                       <tr key={t.id} onClick={() => setSelectedTeam(t)} style={{ cursor: 'pointer', background: selectedTeam?.id === t.id ? 'rgba(59,130,246,0.05)' : '' }}>
                         <td style={{ color: 'var(--text2)', width: '36px' }}>{i + 1}</td>
-                        <td 
-                          title={`${t.name}\n${(t.players || []).map(p => `${p.lastName || ''}, ${p.name || ''}`).join('\n')}`} 
-                          style={{ cursor: 'help' }}
-                        >
-                          <div style={{ fontWeight: 600 }}>{t.name}</div>
+                        <td>
+                          <ValidationIssueTooltip message={hasInvalidAgePlayer ? 'Este equipo tiene al menos un jugador con edad incorrecta para esta categoría.' : ''}>
+                            <div style={{ fontWeight: 600, color: hasInvalidAgePlayer ? '#ef4444' : undefined }}>
+                              <ValidationIssueTooltip message={teamAgeIssue}>
+                                <TeamRosterTooltip team={t} align="left" />
+                              </ValidationIssueTooltip>
+                            </div>
+                          </ValidationIssueTooltip>
                         </td>
                         <td>
                           <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{t.contactLastName ? `${t.contactLastName}, ` : ''}{t.contactName}</div>
@@ -1215,7 +1389,14 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                             {t.contactEmail && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>✉️ {t.contactEmail}</span>}
                           </div>
                         </td>
-                        <td><span className={`badge ${t.players?.length < 3 ? 'badge-error' : 'badge-success'}`}>{t.players?.length || 0} / 4</span></td>
+                        <td>
+                          <span
+                            className="badge"
+                            style={getTeamPlayersBadgeStyle(t.players?.length || 0)}
+                          >
+                            {t.players?.length || 0} / 4
+                          </span>
+                        </td>
                         {activeCategory.manualGroupAssignment && (
                           <td onClick={e => e.stopPropagation()}>
                             <select
@@ -1244,7 +1425,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                           </td>
                         )}
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -1272,12 +1453,21 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                     <div className="table-wrap">
                       <table>
                         <thead>
-                          <tr><th>Jugador</th><th>F. Nacimiento</th><th>Móvil</th><th>Talla</th>{!isLocked && <th></th>}</tr>
+                          <tr><th>Jugador</th><th>DNI</th><th>F. Nacimiento</th><th>Móvil</th><th>Talla</th>{!isLocked && <th></th>}</tr>
                         </thead>
                         <tbody>
-                          {selectedTeam.players?.map(p => (
+                          {selectedTeam.players?.map(p => {
+                            const playerAgeIssue = getPlayerAgeIssue(p, activeCategory)
+                            return (
                             <tr key={p.id}>
-                              <td>{p.lastName ? `${p.lastName}, ` : ''}{p.name}</td>
+                              <td>
+                                <ValidationIssueTooltip message={playerAgeIssue}>
+                                  <span style={{ color: playerAgeIssue ? '#ef4444' : undefined, fontWeight: playerAgeIssue ? 600 : undefined }}>
+                                    {p.lastName ? `${p.lastName}, ` : ''}{p.name}
+                                  </span>
+                                </ValidationIssueTooltip>
+                              </td>
+                              <td>{p.dni || '—'}</td>
                               <td>{p.birthDate ? p.birthDate.split('-').reverse().join('-') : '—'}</td>
                               <td>{p.phone || '—'}</td>
                               <td>{p.shirtSize || ''}</td>
@@ -1290,7 +1480,7 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                                 )}
                               </td>
                             </tr>
-                          ))}
+                          )})}
                         </tbody>
                       </table>
                     </div>
@@ -1302,10 +1492,11 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                             <form onSubmit={handleCreatePlayer}>
                               <div className="form-group"><label className="form-label">Nombre *</label><input className="form-input" value={pName} onChange={e => setPName(e.target.value)} required /></div>
                               <div className="form-group"><label className="form-label">Apellidos</label><input className="form-input" value={pLastName} onChange={e => setPLastName(e.target.value)} /></div>
+                              <div className="form-group"><label className="form-label">DNI</label><input className="form-input" value={pDni} onChange={e => setPDni(e.target.value)} /></div>
                               <div className="form-group"><label className="form-label">F. Nacimiento *</label><input type="date" className="form-input" value={toISO(pBirthDate)} onChange={e => setPBirthDate(toDDMM(e.target.value))} required /></div>
                               <div className="form-group"><label className="form-label">Talla</label><input className="form-input" value={pShirtSize} onChange={e => setPShirtSize(e.target.value)} /></div>
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                {editingPlayer && <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setEditingPlayer(null); setPName(''); setPLastName(''); setPBirthDate(''); setPShirtSize(''); }}>Cancelar</button>}
+                                {editingPlayer && <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setEditingPlayer(null); setPName(''); setPLastName(''); setPDni(''); setPBirthDate(''); setPShirtSize(''); }}>Cancelar</button>}
                                 <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>{editingPlayer ? 'Guardar' : 'Añadir'}</button>
                               </div>
                             </form>
@@ -1335,6 +1526,20 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
 
           {tab === 'partidos' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div className="card" style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 800, color: 'var(--text)' }}>Ordenar por</span>
+                  <select
+                    className="form-input"
+                    value={competitionOrderMode}
+                    onChange={e => setCompetitionOrderMode(e.target.value)}
+                    style={{ width: '220px' }}
+                  >
+                    <option value="group">Grupo</option>
+                    <option value="round">Ronda</option>
+                  </select>
+                </div>
+              </div>
               {!isLocked && !hasMatches && (
                 <GroupAssignmentPanel
                   enabled={!!activeCategory.manualGroupAssignment}
@@ -1347,11 +1552,26 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                 />
               )}
               {Object.entries(matches.reduce((acc, m) => {
-                const g = m.group || 'Liga';
-                if (!acc[g]) acc[g] = [];
-                acc[g].push(m);
+                const key = competitionOrderMode === 'round'
+                  ? getCompetitionRoundBucket(m).label
+                  : (m.group || 'Liga');
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(m);
                 return acc;
-              }, {})).map(([group, groupMatches]) => (
+              }, {}))
+                .sort(([a], [b]) => {
+                  if (competitionOrderMode === 'round') {
+                    const sampleA = matches.find(m => getCompetitionRoundBucket(m).label === a)
+                    const sampleB = matches.find(m => getCompetitionRoundBucket(m).label === b)
+                    const bucketA = getCompetitionRoundBucket(sampleA || {})
+                    const bucketB = getCompetitionRoundBucket(sampleB || {})
+                    if (bucketA.phaseOrder !== bucketB.phaseOrder) return bucketA.phaseOrder - bucketB.phaseOrder
+                    if (bucketA.roundNumber !== bucketB.roundNumber) return bucketA.roundNumber - bucketB.roundNumber
+                    return compareGroupNames(a, b)
+                  }
+                  return compareGroupNames(a, b)
+                })
+                .map(([group, groupMatches]) => (
                 <div key={group}>
                   <h4 style={{ color: 'var(--accent)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>{group}</h4>
                   <div className="table-wrap">
@@ -1361,31 +1581,38 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                       </thead>
                       <tbody>
                         {groupMatches
-                          .sort((a,b) => a.matchNumber - b.matchNumber)
+                          .sort(compareCompetitionMatches)
                           .map(m => {
                             const homeWon = m.status === 'played' && m.homeScore !== null && m.awayScore !== null && Number(m.homeScore) > Number(m.awayScore);
                             const awayWon = m.status === 'played' && m.homeScore !== null && m.awayScore !== null && Number(m.awayScore) > Number(m.homeScore);
                             const isEditing = editingScoreIds.includes(m.id);
                             return (
                               <tr key={m.id} style={{ position: 'relative', background: m.active ? 'rgba(34, 197, 94, 0.05)' : 'transparent' }}>
-                                <td style={{ fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                  #{m.matchNumber}
-                                  {m.active && (
-                                    <span style={{ 
-                                      background: m.isLive ? '#ef4444' : '#22c55e', 
-                                      color: 'white', 
-                                      fontSize: '0.6rem', 
-                                      padding: '1px 4px', 
-                                      borderRadius: '3px',
-                                      fontWeight: 900,
-                                      animation: m.isLive ? 'pulse-live 2s infinite' : 'none'
-                                    }}>
-                                      {m.isLive ? 'EN JUEGO' : 'ACTIVO'}
-                                    </span>
-                                  )}
+                                <td style={{ fontWeight: 800, color: 'var(--accent)', verticalAlign: 'middle' }}>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span>#{m.matchNumber}</span>
+                                    {m.active && (
+                                      <span style={{ 
+                                        background: m.isLive ? '#ef4444' : '#22c55e', 
+                                        color: 'white', 
+                                        fontSize: '0.6rem', 
+                                        padding: '1px 4px', 
+                                        borderRadius: '3px',
+                                        fontWeight: 900,
+                                        animation: m.isLive ? 'pulse-live 2s infinite' : 'none'
+                                      }}>
+                                        {m.isLive ? 'EN JUEGO' : 'ACTIVO'}
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
-                                <td style={{ fontSize: '0.8rem' }}>{m.scheduleSlot ? `${m.scheduleSlot.startTime} (${m.scheduleSlot.court})` : '—'}</td>
-                                <td title={m.homeTeam?.name || 'TBD'} style={{ fontWeight: (m.status === 'played' && homeWon) ? 900 : 400, color: (m.status === 'played' && homeWon) ? activeCategory.color : 'inherit', cursor: 'help' }}>{m.homeTeam?.name || 'TBD'}</td>
+                                <td style={{ fontSize: '0.8rem' }}>
+                                  <div>{m.scheduleSlot ? `${m.scheduleSlot.startTime} (${m.scheduleSlot.court})` : '—'}</div>
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontWeight: 700 }}>{getMatchRoundLabel(m)}</div>
+                                </td>
+                                <td style={{ fontWeight: (m.status === 'played' && homeWon) ? 900 : 400, color: (m.status === 'played' && homeWon) ? activeCategory.color : 'inherit' }}>
+                                  <TeamRosterTooltip team={m.homeTeam} align="right" />
+                                </td>
                                 <td>
                                   {isEditing ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'center' }}>
@@ -1404,7 +1631,9 @@ export default function TournamentManager({ tournament, scheduleActive, onSchedu
                                     </div>
                                   )}
                                 </td>
-                                <td title={m.awayTeam?.name || 'TBD'} style={{ fontWeight: (m.status === 'played' && awayWon) ? 900 : 400, color: (m.status === 'played' && awayWon) ? activeCategory.color : 'inherit', cursor: 'help' }}>{m.awayTeam?.name || 'TBD'}</td>
+                                <td style={{ fontWeight: (m.status === 'played' && awayWon) ? 900 : 400, color: (m.status === 'played' && awayWon) ? activeCategory.color : 'inherit' }}>
+                                  <TeamRosterTooltip team={m.awayTeam} align="left" />
+                                </td>
                                 <td style={{ fontSize: '0.75rem', color: 'var(--text2)' }}>{m.officialName || '—'}</td>
                                 <td><span className={`badge ${m.status === 'played' ? 'badge-played' : 'badge-pending'}`}>{m.status === 'played' ? '✓' : '...'}</span></td>
                                 <td>

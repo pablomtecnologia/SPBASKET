@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import * as api from '../api'
 import TournamentBranding from './TournamentBranding'
 import { getTournamentHeaderLogo } from '../utils/tournamentBranding'
@@ -8,6 +8,7 @@ const ACTA_SESSION_STORAGE_KEY = 'spbasket-acta-session-key'
 
 export default function DigitalScoreboard() {
   const navigate = useNavigate()
+  const { tournamentId: routeTournamentId } = useParams()
   const [activeTournament, setActiveTournament] = useState(null)
   const [officials, setOfficials] = useState([])
   const [selectedOfficial, setSelectedOfficial] = useState('')
@@ -25,7 +26,7 @@ export default function DigitalScoreboard() {
 
   useEffect(() => {
     loadInitialData()
-  }, [])
+  }, [routeTournamentId])
 
   useEffect(() => {
     let interval
@@ -54,7 +55,9 @@ export default function DigitalScoreboard() {
     setLoading(true)
     setError(null)
     try {
-      const tournament = await api.getActiveTournament()
+      const tournament = routeTournamentId
+        ? await api.getTournament(routeTournamentId)
+        : await api.getActiveTournament()
       setActiveTournament(tournament)
 
       if (tournament) {
@@ -67,7 +70,7 @@ export default function DigitalScoreboard() {
       }
     } catch (e) {
       console.error('Error in loadInitialData:', e)
-      setError('Error al cargar datos. Verifica la conexión.')
+      setError(routeTournamentId ? 'No se pudo cargar el torneo indicado.' : 'Error al cargar datos. Verifica la conexión.')
     } finally {
       setLoading(false)
     }

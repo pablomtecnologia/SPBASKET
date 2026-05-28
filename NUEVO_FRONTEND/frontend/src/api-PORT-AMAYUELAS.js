@@ -1,4 +1,4 @@
-const BASE = '/api-3x3'
+const BASE = '/api'
 const AUTH_TOKEN_KEY = 'spbasket_admin_token'
 export const AUTH_EXPIRED_EVENT = 'spbasket-auth-expired'
 
@@ -39,7 +39,7 @@ async function req(method, path, body) {
   if (res.status === 401) {
     setAuthToken('')
     window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, {
-      detail: { message: data.error || 'Tu sesiÃ³n ha caducado.' }
+      detail: { message: data.error || 'Tu sesión ha caducado.' }
     }))
   }
   if (!res.ok) throw new Error(data.error || `Error ${res.status}`)
@@ -63,7 +63,6 @@ export const logout = async () => {
 export const getMe = () => req('GET', '/auth/me')
 export const getUsers = () => req('GET', '/users')
 export const getSessionClosureEvents = () => req('GET', '/users/session-closures')
-export const getAuditEvents = () => req('GET', '/audit-events')
 export const createUser = (data) => req('POST', '/users', data)
 export const updateUser = (id, data) => req('PUT', `/users/${id}`, data)
 export const deleteUser = (id) => req('DELETE', `/users/${id}`)

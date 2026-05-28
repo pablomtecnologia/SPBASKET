@@ -2,7 +2,9 @@ export default function PrintableActas({ matches }) {
   if (!matches || matches.length === 0) return null;
 
   // Filtrar solo los partidos que tienen número de partido asignado (y por ende hora)
-  const scheduledMatches = matches.filter(m => m.matchNumber != null);
+  const scheduledMatches = matches
+    .filter(m => m.matchNumber != null)
+    .sort((a, b) => (a.matchNumber || 0) - (b.matchNumber || 0));
 
   // Agrupar en páginas de 2 partidos
   const pages = [];

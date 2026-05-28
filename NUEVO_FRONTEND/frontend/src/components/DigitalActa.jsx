@@ -135,7 +135,7 @@ export default function DigitalActa() {
       await api.updateScore(activeMatch.id, activeMatch.homeScore, activeMatch.awayScore, activeMatch.homeFouls, activeMatch.awayFouls, activeMatch.observations, 'played', officialName, gTimeStr, sessionKey)
       setActiveMatch(prev => ({ ...prev, status: 'played' }))
       alert('✅ Partido finalizado correctamente.')
-      navigate('/marcador')
+      navigate(`/marcador/${tournamentId}`)
     } catch (e) {
       setError('Error al finalizar el partido')
     } finally {
@@ -172,7 +172,7 @@ export default function DigitalActa() {
     } catch (e) {
       console.error("Error on exit:", e);
     } finally {
-      navigate('/marcador');
+      navigate(`/marcador/${tournamentId}`);
     }
   }
 
@@ -201,7 +201,7 @@ export default function DigitalActa() {
       <div className="acta-digital-error">
         <h2>⚠️ Sin partido activo</h2>
         <p>No hay ningún partido activado para la <strong>{court}</strong>.</p>
-        <button className="btn btn-secondary" onClick={() => navigate('/marcador')}>Volver al Selector</button>
+        <button className="btn btn-secondary" onClick={() => navigate(`/marcador/${tournamentId}`)}>Volver al Selector</button>
       </div>
     )
   }

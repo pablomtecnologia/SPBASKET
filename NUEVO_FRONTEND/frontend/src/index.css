@@ -185,6 +185,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   font-size: 0.7rem;
   font-weight: 700;
 }
+.badge-success { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.35); }
+.badge-blue { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); }
 .badge-pending { background: #292524; color: #a8a29e; }
 .badge-played { background: #14532d; color: #86efac; }
 .badge-lock { background: #7c2d12; color: #fdba74; }
@@ -369,6 +371,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     size: A4 portrait;
     margin: 0;
   }
+
+  body > *:not(.print-container) {
+    display: none !important;
+  }
   
   body {
     background: white !important;
@@ -387,9 +393,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   .print-container {
     display: block !important;
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: static;
     width: 100%;
     margin: 0;
     padding: 0;
@@ -401,12 +405,20 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     width: 210mm;
     height: 297mm;
     page-break-after: always;
+    break-after: page;
+    break-inside: avoid;
+  }
+
+  .acta-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
   }
   
   .acta-half {
     height: 50%;
     box-sizing: border-box;
     padding: 10mm;
+    break-inside: avoid;
   }
   
   .acta-box {
@@ -648,7 +660,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   line-height: 1.5;
 }
 
-.category-btn:hover .category-popup {
+.category-popup.visible {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -700,5 +712,106 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .popup-info-value {
   font-weight: 700;
   color: #fff;
+}
+
+.team-roster-trigger {
+  cursor: help;
+}
+
+.team-roster-popup {
+  position: fixed;
+  background: rgba(15, 15, 20, 0.98);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.9rem;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.4);
+  z-index: 10000;
+  pointer-events: none;
+  backdrop-filter: blur(15px);
+  text-align: left;
+  color: white;
+}
+
+.team-roster-popup::after {
+  content: '';
+  position: absolute;
+  border: 10px solid transparent;
+  left: 24px;
+}
+
+.team-roster-popup-bottom::after {
+  bottom: 100%;
+  border-bottom-color: var(--accent);
+}
+
+.team-roster-popup-top::after {
+  top: 100%;
+  border-top-color: var(--accent);
+}
+
+.team-roster-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
+  font-weight: 800;
+  color: var(--accent2);
+}
+
+.team-roster-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.team-roster-player {
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: #f8fafc;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.team-roster-player:last-child {
+  border-bottom: none;
+}
+
+.team-roster-contact {
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.team-roster-contact-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.team-roster-contact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.team-roster-contact-label {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.team-roster-contact-value {
+  color: #f8fafc;
+  text-align: right;
+  word-break: break-word;
 }
 

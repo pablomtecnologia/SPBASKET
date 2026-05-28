@@ -104,7 +104,7 @@ export default function TournamentInfo({ tournament, onUpdate }) {
   const privateUrls = [
     { label: 'Portal publico del torneo', url: buildAppUrl(`/public/${tournament.id}`) },
     { label: 'Monitor TV del torneo', url: buildAppUrl(`/live/${tournament.id}`) },
-    { label: 'Mantenimiento de actas: pantalla inicial', url: buildAppUrl(`/marcador/${tournament.id}`) },
+    { label: 'Selector de marcador para oficiales', url: buildAppUrl('/marcador') },
   ]
 
   const handleChange = (field, value) => setForm(f => ({ ...f, [field]: value }))
@@ -312,7 +312,7 @@ export default function TournamentInfo({ tournament, onUpdate }) {
               🔒 URLs privadas de operacion
             </div>
             <div className="text-muted" style={{ marginBottom: '0.75rem' }}>
-              Estas URLs solo aparecen en administracion y no se publican en el apartado de informacion del portal web.
+              Estas URLs solo aparecen en administracion y no se publican en el apartado de informacion del portal publico.
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {privateUrls.map(item => (

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { getSchedule, createSchedule, deleteSchedule, getCategories, getJornadas, createJornada, deleteJornada, updateScore, updateScheduleSlot, activateMatch } from '../api'
 import PrintableActas from './PrintableActas'
+import TeamRosterTooltip from './TeamRosterTooltip'
 
 const formatDisplayDate = (date) => date?.includes('-') ? date.split('-').reverse().join('-') : (date || '')
 
@@ -136,6 +138,14 @@ const getScheduleCellFooter = (category) => {
   return `${category.name} · ${category.gender}${category.isVeteran ? ' · VET' : ''}`
 }
 
+const getMatchRoundLabel = (match) => {
+  if (!match) return ''
+  if ((match.round || 1) > 1) return ''
+  const roundValue = match.groupRound || 1
+  const groupValue = match.group || 'Grupo A'
+  return `Ronda ${roundValue} (${groupValue})`
+}
+
 function getPrintableGridMetrics(courtCount, orientation) {
   const isLandscape = orientation === 'landscape'
 
@@ -221,7 +231,7 @@ function ScheduleGridDay({ day, tournamentName, printable = false, isLast = fals
                     {match ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', lineHeight: 1.15 }}>
                         <div style={{ fontSize: printable ? metrics.topFont : '0.72rem', fontWeight: 900 }}>
-                          {[match.matchNumber ? `#${match.matchNumber}` : '', match.group || `R${match.round || 1}`].filter(Boolean).join(' · ')}
+                          {[match.matchNumber ? `#${match.matchNumber}` : '', match.group || `R${match.round || 1}`, getMatchRoundLabel(match)].filter(Boolean).join(' · ')}
                         </div>
                         <div style={{ fontSize: printable ? metrics.teamFont : '0.76rem', fontWeight: 800 }}>{match.homeTeam?.name || match.homePlaceholder || 'TBD'}</div>
                         <div style={{ fontSize: printable ? metrics.scoreFont : '0.82rem', fontWeight: 900 }}>
@@ -1155,6 +1165,9 @@ export default function ScheduleManager({ tournament, onScheduleChange, timerSta
                         }}>
                           {catInfo(m.categoryId)}
                         </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontWeight: 700 }}>
+                          {getMatchRoundLabel(m)}
+                        </div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text2)', fontWeight: 700, marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                           👤 {m.officialName || '—'}
                         </div>
@@ -1165,16 +1178,14 @@ export default function ScheduleManager({ tournament, onScheduleChange, timerSta
                         {/* Equipo Local */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                           <div 
-                            title={m.homeTeam?.name || 'TBD'} 
                             style={{ 
                               width: '100%', textAlign: 'right', padding: '0.5rem', borderRadius: '6px', 
                               background: (m.status === 'played' && homeWon) ? `${cCol}66` : 'transparent', 
                               fontWeight: (m.status === 'played' && homeWon) ? 900 : 500, 
-                              border: (m.status === 'played' && homeWon) ? `2px solid ${cCol}` : 'none', 
-                              cursor: 'help' 
+                              border: (m.status === 'played' && homeWon) ? `2px solid ${cCol}` : 'none'
                             }}
                           >
-                            {m.homeTeam?.name || 'TBD'}
+                            <TeamRosterTooltip team={m.homeTeam} align="right" />
                           </div>
                           {tournament.active && m.isLive && (
                             <div style={{ 
@@ -1200,16 +1211,14 @@ export default function ScheduleManager({ tournament, onScheduleChange, timerSta
                         {/* Equipo Visitante */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                           <div 
-                            title={m.awayTeam?.name || 'TBD'} 
                             style={{ 
                               width: '100%', textAlign: 'left', padding: '0.5rem', borderRadius: '6px', 
                               background: (m.status === 'played' && awayWon) ? `${cCol}66` : 'transparent', 
                               fontWeight: (m.status === 'played' && awayWon) ? 900 : 500, 
-                              border: (m.status === 'played' && awayWon) ? `2px solid ${cCol}` : 'none', 
-                              cursor: 'help' 
+                              border: (m.status === 'played' && awayWon) ? `2px solid ${cCol}` : 'none'
                             }}
                           >
-                            {m.awayTeam?.name || 'TBD'}
+                            <TeamRosterTooltip team={m.awayTeam} align="left" />
                           </div>
                           {tournament.active && m.isLive && (
                             <div style={{ 
@@ -1313,8 +1322,9 @@ export default function ScheduleManager({ tournament, onScheduleChange, timerSta
               </div>
             </div>
           ))}
-          {isPrintingActas && (
-            <PrintableActas matches={filteredSlots.filter(s => s?.match).map(s => ({ ...s.match, scheduleSlot: s, category: categories.find(c => c.id === s.match.categoryId) }))} />
+          {isPrintingActas && createPortal(
+            <PrintableActas matches={filteredSlots.filter(s => s?.match).map(s => ({ ...s.match, scheduleSlot: s, category: categories.find(c => c.id === s.match.categoryId) }))} />,
+            document.body
           )}
         </>
       )}
