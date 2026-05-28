@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface UserProfile {
   id?: number;
@@ -76,7 +77,7 @@ export class PerfilComponent implements OnInit {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    this.http.post<{ url: string }>('http://localhost:3001/api/upload-avatar', formData)
+    this.http.post<{ url: string }>(`${environment.apiUrl}/upload-avatar`, formData)
       .pipe(finalize(() => {
         this.uploadingAvatar = false;
         this.cdr.detectChanges();
@@ -102,7 +103,7 @@ export class PerfilComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.http.post<{ message: string }>('http://localhost:3001/api/request-password-reset', { email: this.user.email })
+    this.http.post<{ message: string }>(`${environment.apiUrl}/request-password-reset`, { email: this.user.email })
       .pipe(finalize(() => {
         this.loading = false;
         this.cdr.detectChanges();
@@ -168,7 +169,7 @@ export class PerfilComponent implements OnInit {
       userToSave.avatar = userToSave.avatar.split('?t=')[0];
     }
 
-    this.http.put<{ message: string, user: UserProfile }>('http://localhost:3001/api/users/profile', userToSave, { headers })
+    this.http.put<{ message: string, user: UserProfile }>(`${environment.apiUrl}/users/profile`, userToSave, { headers })
       .pipe(finalize(() => {
         this.loading = false;
         this.cdr.detectChanges();

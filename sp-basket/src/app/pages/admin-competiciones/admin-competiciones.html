@@ -1,0 +1,84 @@
+<div class="admin-page">
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🔧 Panel de Administración - Competiciones</h1>
+            <p>Actualiza manualmente los datos de clasificación y partidos</p>
+        </div>
+
+        <div class="team-selector">
+            <label>Selecciona Equipo:</label>
+            <select [(ngModel)]="selectedTeam" (change)="onTeamChange()" class="team-select">
+                <option value="sp-rosa">SP ROSA - 1ª División Masculina</option>
+                <option value="sp-negro">SP NEGRO - 2ª División Masculina</option>
+            </select>
+        </div>
+
+        <div class="alert-message" *ngIf="message" [class.success]="messageType === 'success'"
+            [class.error]="messageType === 'error'">
+            {{ message }}
+        </div>
+
+        <div class="edit-sections">
+            <!-- Clasificación -->
+            <div class="edit-section">
+                <div class="section-header">
+                    <h2>📊 Clasificación</h2>
+                    <button (click)="openRawModal('standings')" class="btn-small">📄 Pegar desde Web</button>
+                </div>
+                <p class="help-text">Formato: Pos | Equipo | J | G | P | PF | PC | Pts</p>
+                <textarea [(ngModel)]="clasificacionText" rows="15"
+                    placeholder="1 | SPBASKET ROSA | 11 | 7 | 4 | 592 | 571 | 18" class="data-textarea">
+                </textarea>
+            </div>
+
+            <!-- Partidos -->
+            <div class="edit-section">
+                <div class="section-header">
+                    <h2>🏀 Calendario de Partidos</h2>
+                    <button (click)="openRawModal('matches')" class="btn-small">📄 Pegar desde Web</button>
+                </div>
+                <p class="help-text">Formato: Jornada | Fecha | Hora | Local | Visitante | Res_Local | Res_Visitante |
+                    Pabellón</p>
+                <textarea [(ngModel)]="partidosText" rows="15"
+                    placeholder="1 | 01/10/2025 | 18:00 | SPBASKET ROSA | RIVAL | 65 | 58 | Pab. Bezana"
+                    class="data-textarea">
+                </textarea>
+            </div>
+        </div>
+
+        <!-- Modal for Raw Input -->
+        <div class="modal-overlay" *ngIf="showRawModal">
+            <div class="modal-content">
+                <h3>Pegar texto copiado de la web</h3>
+                <p>Copia el bloque de texto completo de la web de FECAN y pégalo aquí.</p>
+                <textarea [(ngModel)]="rawInputText" rows="10" placeholder="Pega aquí el texto..."></textarea>
+                <div class="modal-actions">
+                    <button (click)="closeRawModal()" class="btn-secondary">Cancelar</button>
+                    <button (click)="processRawInput()" class="btn-primary">Procesar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button (click)="resetToDefaults()" class="btn-secondary" [disabled]="saving">
+                🔄 Cargar Datos por Defecto
+            </button>
+            <button (click)="saveData()" class="btn-primary" [disabled]="saving">
+                <span *ngIf="!saving">💾 Guardar Cambios</span>
+                <span *ngIf="saving">⏳ Guardando...</span>
+            </button>
+        </div>
+
+        <div class="instructions">
+            <h3>📝 Instrucciones:</h3>
+            <ol>
+                <li>Selecciona el equipo que quieres actualizar (SP Rosa o SP Negro)</li>
+                <li>Edita la clasificación y los partidos en formato de tabla (separados por |)</li>
+                <li>Para resultados pendientes, usa "-" en las columnas de resultado</li>
+                <li>Haz clic en "Guardar Cambios" para actualizar la base de datos</li>
+            </ol>
+            <p class="tip">💡 <strong>Tip:</strong> Puedes copiar los datos desde la web de FECAN, formatearlos aquí y
+                guardarlos.</p>
+        </div>
+    </div>
+</div>

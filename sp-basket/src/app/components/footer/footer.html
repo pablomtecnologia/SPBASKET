@@ -15,8 +15,6 @@
                             target="_blank">Política de Cookies</a></li>
                     <li><a href="https://drive.google.com/file/d/196buI8me0aufoybKTr78OsHVNmQF54A0/view"
                             target="_blank">Cartel Informativo</a></li>
-                    <li><a href="https://docs.google.com/document/d/1t4cJ4GQjCzAnOCFaGKTk7DI4I5a6X6EN/edit"
-                            target="_blank">Consentimiento RGPD</a></li>
                     <li><a href="https://docs.google.com/document/d/1wSuSZjPbQvdzb6k7FSzUsddIEdd8mU0z/edit"
                             target="_blank">Privacidad Básica</a></li>
                 </ul>
@@ -83,8 +81,7 @@
                             </path>
                         </svg>
                         <div>
-                            <span>693-414-714</span><br>
-                            <span>606-721-406</span>
+                            <span>693-414-714</span>
                         </div>
                     </div>
                     <div class="contact-item">
@@ -94,7 +91,7 @@
                             </path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
-                        <a href="mailto:contacto@spbasket.es">contacto@spbasket.es</a>
+                        <a href="mailto:comunicacion@saskipenguins.com">comunicacion@saskipenguins.com</a>
                     </div>
                 </div>
             </div>
@@ -103,8 +100,11 @@
 
     <!-- Copyright -->
     <div class="footer-bottom">
-        <div class="container">
+        <div class="container footer-bottom-content">
             <p>&copy; {{ currentYear }} SPBasket. Todos los derechos reservados.</p>
+            <p class="visit-counter" *ngIf="visitCount > 0">
+                <span class="icon">👁️</span> <strong>{{ visitCount | number }}</strong> Visitas
+            </p>
         </div>
     </div>
 </footer>

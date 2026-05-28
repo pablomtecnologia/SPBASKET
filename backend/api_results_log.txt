@@ -1,0 +1,24 @@
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/team-matches/team/4046/season/2025 [No Headers] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/team-matches/team/4046/season/2025 [User-Agent Only] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/team-matches/team/4046/season/2025 [Origin] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/team-matches/team/4046/season/2025 [Referer] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/matches/team/4046/season/2025 [No Headers] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/matches/team/4046/season/2025 [User-Agent Only] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/matches/team/4046/season/2025 [Origin] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/matches/team/4046/season/2025 [Referer] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/calendar/team/4046/season/2025 [No Headers] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/calendar/team/4046/season/2025 [User-Agent Only] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/calendar/team/4046/season/2025 [Origin] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/calendar/team/4046/season/2025 [Referer] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/games/team/4046/season/2025 [No Headers] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/games/team/4046/season/2025 [User-Agent Only] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/games/team/4046/season/2025 [Origin] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/games/team/4046/season/2025 [Referer] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/schedule/team/4046/season/2025 [No Headers] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/schedule/team/4046/season/2025 [User-Agent Only] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/schedule/team/4046/season/2025 [Origin] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/schedule/team/4046/season/2025 [Referer] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/competitions/team/4046/season/2025 [No Headers] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/competitions/team/4046/season/2025 [User-Agent Only] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/competitions/team/4046/season/2025 [Origin] -> 403
+❌ https://msstats.optimalwayconsulting.com/v1/fecan/competitions/team/4046/season/2025 [Referer] -> 403

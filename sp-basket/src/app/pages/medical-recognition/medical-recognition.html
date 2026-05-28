@@ -11,7 +11,16 @@
 
             <!-- Vista Admin Completa -->
             <div class="admin-management-card" *ngIf="isAdmin">
-                <h2>👑 Gestión de Reconocimientos</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>👑 Gestión de Reconocimientos</h2>
+                    <button class="btn-toggle-status" [class.active]="medicalActive" (click)="toggleSystemStatus()">
+                        {{ medicalActive ? '🔴 Cerrar Plazo' : '🟢 Abrir Plazo' }}
+                    </button>
+                </div>
+
+                <div class="alert {{ medicalActive ? 'alert-success' : 'alert-error' }}">
+                    Estado actual: <strong>{{ medicalActive ? 'ABIERTO para envíos' : 'CERRADO' }}</strong>
+                </div>
 
                 <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
 
@@ -20,6 +29,7 @@
                     <p>¡Todo al día! No hay reconocimientos pendientes de validar.</p>
                 </div>
 
+                <!-- (List remains same) -->
                 <div class="admin-list" *ngIf="pendientesAdmin.length > 0">
                     <div class="admin-item" *ngFor="let recon of pendientesAdmin">
                         <div class="item-header">
@@ -47,8 +57,15 @@
                 </div>
             </div>
 
-            <!-- Formulario de Subida (Solo Usuarios) -->
-            <div class="upload-card" *ngIf="!isAdmin">
+            <!-- CLOSED STATE (User Only) -->
+            <div class="closed-state-card" *ngIf="!isAdmin && !medicalActive">
+                <h3>⛔ Plazo Cerrado</h3>
+                <p>El periodo para enviar reconocimientos médicos no está activo en este momento.</p>
+                <p>Por favor, espera a que el club abra el plazo oficial.</p>
+            </div>
+
+            <!-- Formulario de Subida (User Only + Active) -->
+            <div class="upload-card" *ngIf="!isAdmin && medicalActive">
                 <h2>📤 Subir Reconocimiento</h2>
 
                 <div class="alert alert-info">

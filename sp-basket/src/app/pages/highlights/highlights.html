@@ -1,0 +1,257 @@
+<div class="highlights-page">
+
+  <!-- LOADING SCREEN CINEMATOGRÁFICO -->
+  <div class="loading-screen" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="loading-ball">
+        <svg viewBox="0 0 100 100" class="ball-svg">
+          <circle cx="50" cy="50" r="45" stroke="#E6007E" stroke-width="2" fill="none" class="ball-outline" />
+          <path d="M50 5 Q80 50 50 95" stroke="#E6007E" stroke-width="1.5" fill="none" class="ball-line" />
+          <path d="M50 5 Q20 50 50 95" stroke="#E6007E" stroke-width="1.5" fill="none" class="ball-line" />
+          <path d="M5 50 Q50 20 95 50" stroke="#E6007E" stroke-width="1.5" fill="none" class="ball-line" />
+        </svg>
+      </div>
+      <div class="loading-text">
+        <span>H</span><span>I</span><span>G</span><span>H</span><span>L</span><span>I</span><span>G</span><span>H</span><span>T</span><span>S</span>
+      </div>
+      <div class="loading-bar">
+        <div class="loading-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO SECTION CINEMATOGRÁFICO -->
+  <section class="highlights-hero">
+    <canvas #particlesCanvas class="particles-canvas"></canvas>
+    <div class="hero-bg-overlay"></div>
+
+    <!-- Glitch text effect -->
+    <div class="hero-center-content">
+      <div class="hero-badge scroll-reveal">
+        <span class="badge-pulse"></span>
+        <span class="badge-text">🔴 EN DIRECTO · TEMPORADA 2025/26</span>
+      </div>
+      <h1 class="glitch-title" data-text="HIGHLIGHTS">
+        <span class="glitch-layer top">HIGHLIGHTS</span>
+        HIGHLIGHTS
+        <span class="glitch-layer bottom">HIGHLIGHTS</span>
+      </h1>
+      <p class="hero-subtitle scroll-reveal">Los mejores momentos de SP Basket · Cada jugada, cada emoción</p>
+
+      <div class="hero-scroll-indicator">
+        <div class="scroll-mouse">
+          <div class="scroll-wheel"></div>
+        </div>
+        <span>SCROLL</span>
+      </div>
+    </div>
+
+    <!-- Floating basketball elements -->
+    <div class="floating-elements">
+      <div class="floating-ball ball-1">🏀</div>
+      <div class="floating-ball ball-2">🏀</div>
+      <div class="floating-ball ball-3">🏀</div>
+    </div>
+  </section>
+
+  <!-- STATS SECTION -->
+  <section class="stats-section">
+    <div class="stats-container">
+      <div class="stat-card scroll-reveal">
+        <div class="stat-icon">🎬</div>
+        <div class="stat-number">{{ animatedStats.videos }}</div>
+        <div class="stat-label">HIGHLIGHTS</div>
+        <div class="stat-glow"></div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-card scroll-reveal">
+        <div class="stat-icon">👁️</div>
+        <div class="stat-number">{{ formatViews(animatedStats.views) }}</div>
+        <div class="stat-label">VISUALIZACIONES</div>
+        <div class="stat-glow"></div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-card scroll-reveal">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-number">{{ formatViews(animatedStats.likes) }}</div>
+        <div class="stat-label">LIKES</div>
+        <div class="stat-glow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED HIGHLIGHT - TOP PLAY -->
+  <section class="featured-section" *ngIf="featuredHighlight">
+    <div class="container-wide">
+      <div class="section-header scroll-reveal">
+        <div class="section-tag">
+          <span class="tag-fire">🔥</span>
+          <span>TOP PLAY DE LA SEMANA</span>
+        </div>
+        <h2 class="section-title">LA JUGADA MÁS ÉPICA</h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="featured-card scroll-reveal">
+        <div class="featured-video-container">
+          <div class="featured-thumbnail" *ngIf="activeVideoId !== featuredHighlight.id"
+            (click)="playVideo(featuredHighlight.id)">
+            <img [src]="featuredHighlight.thumbnailUrl" [alt]="featuredHighlight.title" />
+            <div class="play-overlay">
+              <div class="play-button-mega">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <div class="play-ripple"></div>
+                <div class="play-ripple delay-1"></div>
+                <div class="play-ripple delay-2"></div>
+              </div>
+            </div>
+            <div class="featured-duration">{{ featuredHighlight.duration }}</div>
+            <div class="featured-badge-live">
+              <span class="live-dot"></span> TOP PLAY
+            </div>
+          </div>
+          <div class="featured-iframe-wrapper" *ngIf="activeVideoId === featuredHighlight.id">
+            <iframe [src]="featuredHighlight.videoUrl" frameborder="0" allowfullscreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+            </iframe>
+          </div>
+        </div>
+
+        <div class="featured-info">
+          <div class="featured-team-badge" [ngClass]="getTeamBadgeClass(featuredHighlight.team)">
+            {{ getTeamName(featuredHighlight.team) }}
+          </div>
+          <h3 class="featured-title">{{ featuredHighlight.title }}</h3>
+          <p class="featured-description">{{ featuredHighlight.description }}</p>
+          <div class="featured-match-score" *ngIf="featuredHighlight.matchScore">
+            <span class="score-icon">🏆</span>
+            <span>{{ featuredHighlight.matchScore }}</span>
+          </div>
+          <div class="featured-meta">
+            <div class="meta-item">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+              </svg>
+              <span>{{ formatViews(featuredHighlight.views) }} views</span>
+            </div>
+            <div class="meta-item">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              <span>{{ formatViews(featuredHighlight.likes) }}</span>
+            </div>
+            <div class="meta-item">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path
+                  d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+              </svg>
+              <span>{{ formatDate(featuredHighlight.date) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTROS -->
+  <section class="filters-section">
+    <div class="container-wide">
+      <div class="filters-wrapper scroll-reveal">
+        <button *ngFor="let cat of categories" class="filter-btn" [class.active]="activeFilter === cat.id"
+          (click)="filterHighlights(cat.id)" [attr.id]="'filter-' + cat.id">
+          <span class="filter-icon">{{ cat.icon }}</span>
+          <span class="filter-label">{{ cat.label }}</span>
+          <span class="filter-active-bar"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRID DE HIGHLIGHTS -->
+  <section class="highlights-grid-section">
+    <div class="container-wide">
+      <div class="section-header scroll-reveal">
+        <h2 class="section-title">TODOS LOS HIGHLIGHTS</h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="highlights-grid">
+        <div *ngFor="let highlight of filteredHighlights; let i = index" class="highlight-card"
+          [style.animation-delay]="(i * 0.1) + 's'" [attr.id]="'highlight-' + highlight.id">
+
+          <!-- Video Thumbnail -->
+          <div class="card-video-wrapper">
+            <div class="card-thumbnail" *ngIf="activeVideoId !== highlight.id" (click)="playVideo(highlight.id)">
+              <img [src]="highlight.thumbnailUrl" [alt]="highlight.title" loading="lazy" />
+              <div class="card-play-overlay">
+                <div class="card-play-btn">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="card-duration">{{ highlight.duration }}</div>
+              <div class="card-team-badge" [ngClass]="getTeamBadgeClass(highlight.team)">
+                {{ getTeamName(highlight.team) }}
+              </div>
+              <!-- Gradient overlay bottom -->
+              <div class="card-gradient-bottom"></div>
+            </div>
+            <div class="card-iframe-wrapper" *ngIf="activeVideoId === highlight.id">
+              <iframe [src]="highlight.videoUrl" frameborder="0" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+              </iframe>
+            </div>
+          </div>
+
+          <!-- Card Info -->
+          <div class="card-info">
+            <h3 class="card-title">{{ highlight.title }}</h3>
+            <p class="card-description">{{ highlight.description }}</p>
+            <div class="card-score" *ngIf="highlight.matchScore">
+              🏆 {{ highlight.matchScore }}
+            </div>
+            <div class="card-meta">
+              <span class="card-views">👁️ {{ formatViews(highlight.views) }}</span>
+              <span class="card-likes">❤️ {{ formatViews(highlight.likes) }}</span>
+              <span class="card-date">📅 {{ formatDate(highlight.date) }}</span>
+            </div>
+          </div>
+
+          <!-- Hover glow effect -->
+          <div class="card-glow"></div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state scroll-reveal" *ngIf="filteredHighlights.length === 0">
+        <div class="empty-icon">🎬</div>
+        <h3>No hay highlights en esta categoría</h3>
+        <p>¡Pronto subiremos más momentos épicos!</p>
+        <button class="btn btn-primary" (click)="filterHighlights('all')">VER TODOS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="highlights-cta">
+    <div class="cta-bg-pattern"></div>
+    <div class="container text-center">
+      <div class="cta-content scroll-reveal">
+        <h2>¿TIENES UN HIGHLIGHT QUE COMPARTIR?</h2>
+        <p>Envíanos tus mejores jugadas y aparecerán en nuestra web</p>
+        <a routerLink="/contacto" class="btn btn-cta" id="cta-send-highlight">
+          <span>ENVIAR HIGHLIGHT</span>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</div>

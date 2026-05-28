@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../services/auth';
+import { environment } from '../../../environments/environment';
 
 interface Reconocimiento {
   id: number;
@@ -44,6 +45,10 @@ export class MedicalRecognitionComponent implements OnInit {
   pendientesAdmin: Reconocimiento[] = []; // Admin
   loading = false;
   isAdmin = false;
+  private apiUrl = environment.apiUrl;
+
+  // Estado del sistema
+  medicalActive = false;
 
   constructor(
     private http: HttpClient,
@@ -52,6 +57,8 @@ export class MedicalRecognitionComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.checkSystemStatus(); // ✅ Check status first
+
     this.authService.currentUser.subscribe(user => {
       this.isAdmin = this.authService.isAdmin();
 
@@ -67,9 +74,36 @@ export class MedicalRecognitionComponent implements OnInit {
         }
       } else {
         this.loading = false;
-        this.errorMessage = 'Debes iniciar sesión para acceder a esta página';
+        // Optional: redirect to login or show message
+        if (!this.errorMessage) this.errorMessage = 'Debes iniciar sesión para acceder a esta página';
       }
     });
+  }
+
+  checkSystemStatus() {
+    this.http.get<{ value: boolean }>(`${this.apiUrl}/settings/medical_active`)
+      .subscribe({
+        next: (res) => {
+          // Postgres returns string "true" or boolean true sometimes
+          this.medicalActive = (res.value === true || String(res.value) === 'true');
+        },
+        error: () => this.medicalActive = false // Default closed on error
+      });
+  }
+
+  toggleSystemStatus() {
+    if (!this.isAdmin) return;
+    const newValue = !this.medicalActive;
+    const headers = this.authService.getAuthHeaders();
+
+    this.http.post(`${this.apiUrl}/settings/medical_active`, { value: newValue }, { headers })
+      .subscribe({
+        next: () => {
+          this.medicalActive = newValue;
+          alert(`✅ El sistema ha sido ${newValue ? 'ABIERTO' : 'CERRADO'} para los usuarios.`);
+        },
+        error: () => alert('Error al cambiar el estado del sistema')
+      });
   }
 
   cargarMisReconocimientos() {
@@ -80,7 +114,7 @@ export class MedicalRecognitionComponent implements OnInit {
     const headers = this.authService.getAuthHeaders();
     console.log('🔄 Iniciando carga de reconocimientos...');
 
-    this.http.get<Reconocimiento[]>('http://localhost:3001/api/reconocimientos', { headers })
+    this.http.get<Reconocimiento[]>(`${this.apiUrl}/reconocimientos`, { headers })
       .pipe(finalize(() => {
         console.log('🏁 Fin de carga - Forzando actualización vista');
         this.loading = false;
@@ -93,7 +127,8 @@ export class MedicalRecognitionComponent implements OnInit {
         },
         error: (err) => {
           console.error('❌ Error cargando:', err);
-          this.errorMessage = 'No se pudieron cargar los datos.';
+          // Don't show generic error if it's just empty or 401, handle gracefully
+          if (err.status !== 401) this.errorMessage = 'No se pudieron cargar los datos.';
         }
       });
   }
@@ -143,7 +178,7 @@ export class MedicalRecognitionComponent implements OnInit {
 
     const headers = this.authService.getAuthHeaders();
 
-    this.http.post('http://localhost:3001/api/reconocimientos', formData, { headers })
+    this.http.post(`${this.apiUrl}/reconocimientos`, formData, { headers })
       .pipe(finalize(() => {
         // Asegurar que sending se desactiva pase lo que pase
         // Lo ponemos en un timeout minúsculo para dar tiempo a que se procese el next/error
@@ -205,7 +240,7 @@ export class MedicalRecognitionComponent implements OnInit {
     this.loading = true;
     const headers = this.authService.getAuthHeaders();
 
-    this.http.get<Reconocimiento[]>('http://localhost:3001/api/reconocimientos', { headers })
+    this.http.get<Reconocimiento[]>(`${this.apiUrl}/reconocimientos`, { headers })
       .pipe(finalize(() => {
         this.loading = false;
         this.cd.detectChanges();
@@ -233,7 +268,7 @@ export class MedicalRecognitionComponent implements OnInit {
     const estado = accion === 'validar' ? 'validado' : 'rechazado';
     const headers = this.authService.getAuthHeaders();
 
-    this.http.put(`http://localhost:3001/api/reconocimientos/${id}`, { estado, mensaje }, { headers })
+    this.http.put(`${this.apiUrl}/reconocimientos/${id}`, { estado, mensaje }, { headers })
       .subscribe({
         next: () => {
           this.successMessage = `Reconocimiento ${estado} correctamente`;

@@ -9,11 +9,11 @@ const nodemailer = require('nodemailer');
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
-const Stripe = require('stripe');
+// const Stripe = require('stripe'); // Comentado para desarrollo local
 
 const app = express();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
-const PORT = process.env.PORT || 10000; // Render usa PORT 10000 por defecto a veces
+// const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder'); // Comentado para desarrollo local
+const PORT = process.env.PORT || 3001; // Puerto para desarrollo local
 
 // ---------- CONFIG ----------
 const JWT_SECRET = process.env.JWT_SECRET || 'MI_SECRETA_SUPER_SPBASKET_2024';
@@ -87,8 +87,8 @@ app.use((req, res, next) => { console.log(`📨 ${req.method} ${req.path}`); nex
 
 // ---------- DB POOL ----------
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    connectionString: process.env.DATABASE_URL
+    // ssl: { rejectUnauthorized: false } // Desactivado para desarrollo local
 });
 
 // ---------- INIT DB ----------
@@ -330,6 +330,195 @@ app.get('/api/noticias/:id', async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ message: 'No found' });
         res.json(rows[0]);
     } catch (e) { res.status(500).json({ message: 'Error noticia' }); }
+});
+
+// ========== IMPORTACIÓN AUTOMÁTICA DE FECAN ==========
+const { getFecanMatches } = require('./scraper-fecan');
+
+const TEAM_FECAN_IDS = {
+    'sp-rosa': 4046,
+    'sp-negro': 4046
+};
+
+app.get('/api/admin/fecan/matches/:teamId', verifyToken, async (req, res) => {
+    if (req.user.rol !== 'admin') {
+        return res.status(403).json({ message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    try {
+        const { teamId } = req.params;
+        const fecanId = TEAM_FECAN_IDS[teamId];
+
+        if (!fecanId) {
+            return res.status(400).json({
+                message: 'ID de equipo no válido',
+                validIds: Object.keys(TEAM_FECAN_IDS)
+            });
+        }
+
+        console.log(`🔄 Importando partidos de FECAN para ${teamId} (FECAN ID: ${fecanId})`);
+
+        const matches = await getFecanMatches(fecanId);
+
+        res.json({
+            success: true,
+            teamId,
+            fecanId,
+            matches,
+            count: matches.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo partidos de FECAN:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener partidos de FECAN',
+            error: error.message
+        });
+    }
+});
+
+app.post('/api/admin/fecan/import/:teamId', verifyToken, async (req, res) => {
+    if (req.user.rol !== 'admin') {
+        return res.status(403).json({ message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    try {
+        const { teamId } = req.params;
+        const fecanId = TEAM_FECAN_IDS[teamId];
+
+        if (!fecanId) {
+            return res.status(400).json({
+                message: 'ID de equipo no válido',
+                validIds: Object.keys(TEAM_FECAN_IDS)
+            });
+        }
+
+        console.log(`📥 Importando y guardando partidos de FECAN para ${teamId}`);
+
+        const matches = await getFecanMatches(fecanId);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS fecan_matches (
+                id SERIAL PRIMARY KEY,
+                team_id VARCHAR(50) NOT NULL,
+                round INTEGER,
+                match_date VARCHAR(50),
+                match_time VARCHAR(10),
+                home_team VARCHAR(255),
+                away_team VARCHAR(255),
+                location VARCHAR(255),
+                home_score INTEGER,
+                away_score INTEGER,
+                home_team_logo TEXT,
+                away_team_logo TEXT,
+                status VARCHAR(20),
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(team_id, round)
+            );
+        `);
+
+        let imported = 0;
+        let updated = 0;
+        let errors = 0;
+
+        for (const match of matches) {
+            try {
+                const result = await pool.query(`
+                    INSERT INTO fecan_matches (
+                        team_id, round, match_date, match_time, 
+                        home_team, away_team, location,
+                        home_score, away_score,
+                        home_team_logo, away_team_logo,
+                        status, last_updated
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+                    ON CONFLICT (team_id, round) 
+                    DO UPDATE SET
+                        match_date = EXCLUDED.match_date,
+                        match_time = EXCLUDED.match_time,
+                        home_team = EXCLUDED.home_team,
+                        away_team = EXCLUDED.away_team,
+                        location = EXCLUDED.location,
+                        home_score = EXCLUDED.home_score,
+                        away_score = EXCLUDED.away_score,
+                        home_team_logo = EXCLUDED.home_team_logo,
+                        away_team_logo = EXCLUDED.away_team_logo,
+                        status = EXCLUDED.status,
+                        last_updated = NOW()
+                    RETURNING (xmax = 0) AS inserted
+                `, [
+                    teamId, match.round, match.date, match.time,
+                    match.homeTeam, match.awayTeam, match.location,
+                    match.homeScore, match.awayScore,
+                    match.homeTeamLogo, match.awayTeamLogo, match.status
+                ]);
+
+                if (result.rows[0].inserted) {
+                    imported++;
+                } else {
+                    updated++;
+                }
+            } catch (err) {
+                console.error(`❌ Error importando partido jornada ${match.round}:`, err.message);
+                errors++;
+            }
+        }
+
+        console.log(`✅ Importación completa: ${imported} nuevos, ${updated} actualizados, ${errors} errores`);
+
+        res.json({
+            success: true,
+            teamId,
+            imported,
+            updated,
+            errors,
+            total: matches.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error importando partidos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al importar partidos',
+            error: error.message
+        });
+    }
+});
+
+app.get('/api/fecan/matches/:teamId', async (req, res) => {
+    try {
+        const { teamId } = req.params;
+
+        const { rows } = await pool.query(`
+            SELECT * FROM fecan_matches 
+            WHERE team_id = $1 
+            ORDER BY round ASC
+        `, [teamId]);
+
+        res.json({
+            success: true,
+            teamId,
+            matches: rows,
+            count: rows.length
+        });
+
+    } catch (error) {
+        if (error.message.includes('does not exist')) {
+            return res.json({
+                success: true,
+                teamId: req.params.teamId,
+                matches: [],
+                count: 0
+            });
+        }
+
+        console.error('❌ Error obteniendo partidos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener partidos',
+            error: error.message
+        });
+    }
 });
 
 // Start

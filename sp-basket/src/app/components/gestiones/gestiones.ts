@@ -5,7 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth';
 import { interval, Subscription, forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface Reconocimiento {
     id: number;
@@ -34,20 +35,31 @@ interface Papeleta {
     fecha_subida: string;
 }
 
+interface OrderNotification {
+    id: number;
+    type: string;
+    title: string;
+    message: string;
+    reference_id: number;
+    is_read: boolean;
+    created_at: string;
+}
+
 @Component({
     selector: 'app-gestiones',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterModule],
     templateUrl: './gestiones.html',
     styleUrls: ['./gestiones.css']
 })
 export class GestionesComponent implements OnInit, OnDestroy {
     reconocimientosPendientes: Reconocimiento[] = [];
     papeletasPendientes: Papeleta[] = [];
+    pedidosPendientes: OrderNotification[] = [];
 
     showDropdown = false;
     loading = false;
-    viewMode: 'reconocimientos' | 'papeletas' = 'reconocimientos';
+    viewMode: 'reconocimientos' | 'papeletas' | 'pedidos' = 'reconocimientos';
 
     badgeCount: number = 0;
 
@@ -103,6 +115,7 @@ export class GestionesComponent implements OnInit, OnDestroy {
         this.badgeCount = 0;
         this.reconocimientosPendientes = [];
         this.papeletasPendientes = [];
+        this.pedidosPendientes = [];
     }
 
     loadData() {
@@ -112,8 +125,9 @@ export class GestionesComponent implements OnInit, OnDestroy {
         const isAdmin = this.authService.isAdmin();
 
         forkJoin({
-            reconocimientos: this.http.get<Reconocimiento[]>('http://localhost:3001/api/reconocimientos', { headers }).pipe(catchError(() => of([]))),
-            papeletas: this.http.get<Papeleta[]>('http://localhost:3001/api/papeletas', { headers }).pipe(catchError(() => of([])))
+            reconocimientos: this.http.get<Reconocimiento[]>(`${environment.apiUrl}/reconocimientos`, { headers }).pipe(catchError(() => of([]))),
+            papeletas: this.http.get<Papeleta[]>(`${environment.apiUrl}/papeletas`, { headers }).pipe(catchError(() => of([]))),
+            pedidos: this.http.get<OrderNotification[]>(`${environment.apiUrl}/admin/notifications`, { headers }).pipe(catchError(() => of([])))
         }).subscribe(results => {
             if (isAdmin) {
                 this.reconocimientosPendientes = results.reconocimientos.filter(r => r.estado === 'pendiente');
@@ -122,12 +136,13 @@ export class GestionesComponent implements OnInit, OnDestroy {
                 this.reconocimientosPendientes = results.reconocimientos;
                 this.papeletasPendientes = results.papeletas;
             }
+            this.pedidosPendientes = results.pedidos.filter(n => !n.is_read);
             this.updateBadge();
         });
     }
 
     updateBadge() {
-        const total = this.reconocimientosPendientes.length + this.papeletasPendientes.length;
+        const total = this.reconocimientosPendientes.length + this.papeletasPendientes.length + this.pedidosPendientes.length;
         const lastSeen = parseInt(localStorage.getItem('lastViewedNotifs') || '0');
 
         if (this.showDropdown) {
@@ -152,7 +167,7 @@ export class GestionesComponent implements OnInit, OnDestroy {
         }
     }
 
-    switchTab(tab: 'reconocimientos' | 'papeletas') {
+    switchTab(tab: 'reconocimientos' | 'papeletas' | 'pedidos') {
         this.viewMode = tab;
     }
 
@@ -182,7 +197,7 @@ export class GestionesComponent implements OnInit, OnDestroy {
         const headers = this.authService.getAuthHeaders();
 
         this.loading = true;
-        this.http.put(`http://localhost:3001/api/reconocimientos/${this.selectedReconocimiento.id}`, body, { headers })
+        this.http.put(`${environment.apiUrl}/reconocimientos/${this.selectedReconocimiento.id}`, body, { headers })
             .pipe(finalize(() => this.loading = false))
             .subscribe({
                 next: () => {
@@ -202,7 +217,7 @@ export class GestionesComponent implements OnInit, OnDestroy {
         if (!confirm(`¿Confirmar ${estado} para ${papeleta.nombre}?`)) return;
 
         const headers = this.authService.getAuthHeaders();
-        this.http.put(`http://localhost:3001/api/papeletas/${papeleta.id}`, { estado }, { headers })
+        this.http.put(`${environment.apiUrl}/papeletas/${papeleta.id}`, { estado }, { headers })
             .subscribe({
                 next: () => {
                     this.loadData();
@@ -222,5 +237,28 @@ export class GestionesComponent implements OnInit, OnDestroy {
     irAPagar() {
         this.router.navigate(['/pagos']);
         this.showDropdown = false;
+    }
+
+    marcarNotificacionLeida(notif: OrderNotification) {
+        const headers = this.authService.getAuthHeaders();
+        this.http.put(`${environment.apiUrl}/admin/notifications/${notif.id}/read`, {}, { headers })
+            .subscribe({
+                next: () => {
+                    this.loadData();
+                },
+                error: () => { }
+            });
+    }
+
+    marcarTodasLeidas() {
+        const headers = this.authService.getAuthHeaders();
+        this.http.put(`${environment.apiUrl}/admin/notifications/read-all`, {}, { headers })
+            .subscribe({
+                next: () => {
+                    this.pedidosPendientes = [];
+                    this.updateBadge();
+                },
+                error: () => { }
+            });
     }
 }

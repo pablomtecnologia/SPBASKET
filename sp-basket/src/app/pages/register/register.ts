@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
     selector: 'app-register',
@@ -25,6 +26,8 @@ export class RegisterComponent {
     errorMessage = '';
     successMessage = '';
 
+
+
     constructor(private http: HttpClient, private router: Router) { }
 
     onSubmit() {
@@ -36,7 +39,7 @@ export class RegisterComponent {
         this.loading = true;
         this.errorMessage = '';
 
-        this.http.post('http://localhost:3001/api/register', this.userData)
+        this.http.post(`${environment.apiUrl}/register`, this.userData)
             .subscribe({
                 next: (response: any) => {
                     this.successMessage = '¡Registro completado! Redirigiendo al login...';

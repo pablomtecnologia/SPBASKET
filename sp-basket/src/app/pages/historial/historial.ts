@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth';
 import { interval, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface HistorialReconocimiento {
     id: number;
@@ -70,7 +71,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
         const headers = this.authService.getAuthHeaders();
         const t = new Date().getTime(); // Timestamp para evitar caché
 
-        this.http.get<HistorialReconocimiento[]>(`http://localhost:3001/api/reconocimientos?t=${t}`, { headers })
+        this.http.get<HistorialReconocimiento[]>(`${environment.apiUrl}/reconocimientos?t=${t}`, { headers })
             .subscribe({
                 next: (data) => {
                     this.historialReconocimientos = data;
@@ -81,7 +82,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
                 }
             });
 
-        this.http.get<HistorialPapeleta[]>(`http://localhost:3001/api/papeletas?t=${t}`, { headers })
+        this.http.get<HistorialPapeleta[]>(`${environment.apiUrl}/papeletas?t=${t}`, { headers })
             .subscribe({
                 next: (data) => {
                     this.historialPapeletas = data;
@@ -93,7 +94,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
             });
 
         // Cargar historial de pagos generales con anti-caché
-        this.http.get<HistorialPago[]>(`http://localhost:3001/api/pagos/historial?t=${t}`, { headers })
+        this.http.get<HistorialPago[]>(`${environment.apiUrl}/pagos/historial?t=${t}`, { headers })
             .subscribe({
                 next: (data) => {
                     console.log('Pagos cargados:', data);
@@ -107,11 +108,11 @@ export class HistorialComponent implements OnInit, OnDestroy {
 
     descargarFactura(p: HistorialPapeleta) {
         if (!p.pagado) return;
-        this.downloadPdf(`http://localhost:3001/api/papeletas/invoice`, `factura_papeletas.pdf`);
+        this.downloadPdf(`${environment.apiUrl}/papeletas/invoice`, `factura_papeletas.pdf`);
     }
 
     descargarFacturaGenerica(p: HistorialPago) {
-        this.downloadPdf(`http://localhost:3001/api/pagos/factura/${p.id}`, `factura_compra_${p.id}.pdf`);
+        this.downloadPdf(`${environment.apiUrl}/pagos/factura/${p.id}`, `factura_compra_${p.id}.pdf`);
     }
 
     private downloadPdf(url: string, name: string) {

@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -29,7 +29,7 @@ interface Obstacle {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './fan-zone.html',
-  styleUrls: ['./fan-zone.css']
+  styleUrls: ['./fan-zone.css', './team-controls.css']
 })
 export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('runnerCanvas') runnerCanvasRef!: ElementRef<HTMLCanvasElement>;
@@ -50,32 +50,9 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   imagesLoaded = false;
 
   // --- QUINIELA ---
-  quinielas = [
-    {
-      id: 'rosa-match-9',
-      team: 'rosa',
-      competition: '1ª División Masculina',
-      home: 'SP Basket Rosa',
-      visitor: 'Cantbasket 04',
-      date: 'Domingo 12 Ene, 12:00',
-      logoHome: 'assets/images/logo-sp-pink.png',
-      logoVisitor: 'assets/images/logos/cantbasket04.jpeg',
-      prediction: { home: null, visitor: null },
-      submitted: false
-    },
-    {
-      id: 'negro-match-9',
-      team: 'negro',
-      competition: '2ª División Autonómica',
-      home: 'Daygon Santander',
-      visitor: 'SP Basket Negro',
-      date: 'Sábado 11 Ene, 18:30',
-      logoHome: 'assets/images/logos/daygon.jpg',
-      logoVisitor: 'assets/images/comp-negro-new.jpg',
-      prediction: { home: null, visitor: null },
-      submitted: false
-    }
-  ];
+  // --- QUINIELA ---
+  quinielas: any[] = [];
+
 
   // --- ENCUESTA MVP ---
   // Inicializamos DIRECTAMENTE con los datos para evitar "Cargando..."
@@ -137,7 +114,19 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   obstacles: Obstacle[] = [];
   obstacleTimer = 0;
 
-  constructor(private auth: AuthService, private http: HttpClient) {
+  // --- SETTINGS & ADMIN ---
+  isAdmin = false;
+  settings: any = {
+    quiniela_rosa_open: false,
+    quiniela_negro_open: false,
+    mvp_rosa_open: false,
+    mvp_negro_open: false
+  };
+
+  // --- ADMIN DATA ---
+  adminVotes: { quinielas: any[], mvp_votes: any[] } = { quinielas: [], mvp_votes: [] };
+
+  constructor(private auth: AuthService, private http: HttpClient, private cdr: ChangeDetectorRef) {
     this.updatePlayerAsset();
 
     // Cargar Logos Rivales para el juego
@@ -157,12 +146,179 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.auth.currentUser.subscribe(user => {
       this.isLoggedIn = !!user;
       this.currentUser = user;
+      this.isAdmin = user?.rol === 'admin';
     });
 
     const savedRunner = localStorage.getItem('spRunnerHighScore');
     if (savedRunner) this.highScoreRunner = parseInt(savedRunner, 10);
 
+    // Initial load
+    this.loadSettings();
     this.loadMvpCandidates();
+    if (this.isAdmin) this.loadAdminVotes();
+  }
+
+
+
+  loadSettings() {
+    this.http.get(`${environment.apiUrl}/settings`).subscribe({
+      next: (data: any) => {
+        console.log('📥 Raw Settings from DB:', data);
+
+        // Helper to safely parse boolean
+        const parseBool = (val: any): boolean => {
+          if (typeof val === 'boolean') return val;
+          if (val === 'true' || val === 1 || val === 't') return true;
+          return false;
+        };
+
+        this.settings = {
+          quiniela_rosa_open: parseBool(data.quiniela_rosa_open),
+          quiniela_negro_open: parseBool(data.quiniela_negro_open),
+          mvp_rosa_open: parseBool(data.mvp_rosa_open),
+          mvp_negro_open: parseBool(data.mvp_negro_open)
+        };
+
+        console.log('✅ Processed Settings:', this.settings);
+        this.cdr.detectChanges(); // FORCE UI UPDATE
+
+        this.loadMatches();
+        if (this.isAdmin) this.loadAdminVotes(); // Reload if admin
+      },
+      error: (e) => {
+        console.error('❌ Error loading settings:', e);
+        // Set defaults on error
+        this.settings = {
+          quiniela_rosa_open: false,
+          quiniela_negro_open: false,
+          mvp_rosa_open: false,
+          mvp_negro_open: false
+        };
+        this.cdr.detectChanges(); // FORCE UI UPDATE
+      }
+    });
+  }
+
+  loadAdminVotes() {
+    this.http.get<any>(`${environment.apiUrl}/admin/votes`, { headers: this.auth.getAuthHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.adminVotes = data;
+          console.log('📊 Admin Votes loaded:', this.adminVotes);
+        },
+        error: (e) => console.error('Error loading admin votes', e)
+      });
+  }
+
+  loadMatches() {
+    this.http.get<any[]>(`${environment.apiUrl}/matches`).subscribe({
+      next: (matches) => {
+        console.log('📥 Raw matches from API:', matches);
+
+        if (!Array.isArray(matches)) {
+          console.error('❌ Matches is not an array:', matches);
+          this.quinielas = [];
+          return;
+        }
+
+        // Map backend matches to frontend structure
+        this.quinielas = matches.map(m => {
+          let isOpen = m.isOpen; // Default from Date logic
+
+          // Override if Admin Force Open is active
+          if (m.team_type === 'rosa' && this.settings.quiniela_rosa_open) isOpen = true;
+          if (m.team_type === 'negro' && this.settings.quiniela_negro_open) isOpen = true;
+
+          return {
+            id: m.id,
+            team: m.team_type,
+            competition: m.competition,
+            home: m.home_team,
+            visitor: m.visitor_team,
+            date: new Date(m.match_date).toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' }),
+            rawDate: m.match_date,
+            logoHome: m.logo_home,
+            logoVisitor: m.logo_visitor,
+            prediction: { home: null, visitor: null },
+            submitted: false,
+            isOpen: isOpen
+          };
+        });
+
+        console.log('✅ Quinielas loaded:', this.quinielas.length);
+        this.loadUserPredictions();
+        this.loadUserMvpVotes(); // Load MVP history
+      },
+      error: (e) => {
+        console.error('❌ Error loading matches:', e);
+        console.error('   Status:', e.status);
+        console.error('   Message:', e.message);
+        console.error('   Error body:', e.error);
+        this.quinielas = [];
+      }
+    });
+  }
+
+  loadUserPredictions() {
+    if (!this.isLoggedIn) return;
+    this.http.get<any[]>(`${environment.apiUrl}/quiniela/my-predictions`, { headers: this.auth.getAuthHeaders() }).subscribe({
+      next: (preds) => {
+        if (!Array.isArray(preds)) return;
+        preds.forEach(p => {
+          const match = this.quinielas.find(m => m.id === p.match_id);
+          if (match) {
+            match.prediction = { home: p.home_score, visitor: p.visitor_score };
+            match.submitted = true;
+          }
+        });
+      }
+    });
+  }
+
+  // NEW: Load user MPV votes to block duplicates
+  userMvpVotes: number[] = []; // Match IDs where user already voted MVP
+
+  loadUserMvpVotes() {
+    if (!this.isLoggedIn) return;
+    this.http.get<any[]>(`${environment.apiUrl}/mvp/my-votes`, { headers: this.auth.getAuthHeaders() }).subscribe({
+      next: (votes) => {
+        if (Array.isArray(votes)) {
+          this.userMvpVotes = votes.map(v => v.match_id);
+          // Check if user has voted for the current visible match context
+          this.checkMvpVotedState();
+        }
+      }
+    });
+  }
+
+  checkMvpVotedState() {
+    // Find the match for current team
+    const currentMatch = this.quinielas.find(q => q.team === this.currentTeam);
+    if (currentMatch && this.userMvpVotes.includes(currentMatch.id)) {
+      this.mvpVoted = true;
+    } else {
+      this.mvpVoted = false;
+    }
+  }
+
+  toggleSetting(key: string) {
+    if (!this.isAdmin) return;
+    const newValue = !this.settings[key];
+    const previousValue = this.settings[key];
+    this.settings[key] = newValue; // Optimistic update
+
+    this.http.put(`${environment.apiUrl}/settings`, { key, value: newValue }, { headers: this.auth.getAuthHeaders() }).subscribe({
+      next: (res) => {
+        console.log('✅ Setting updated successfully:', key, '=', newValue);
+        // Reload settings to ensure sync
+        this.loadSettings();
+      },
+      error: (err) => {
+        console.error('❌ Error saving setting:', err);
+        this.settings[key] = previousValue; // Revert on error
+        alert('Error guardando configuración: ' + (err.error?.message || err.message));
+      }
+    });
   }
 
   ngAfterViewInit() { }
@@ -174,6 +330,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentTeam = team;
     this.updatePlayerAsset();
     this.selectedMvp = ''; // Reset selección
+    this.checkMvpVotedState(); // Update MVP vote status for new team
   }
 
   updatePlayerAsset() {
@@ -205,7 +362,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // --- DATA FETCHING ---
   loadMvpCandidates() {
-    this.http.get<any[]>(`${environment.apiUrl}/api/mvp-candidates`).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/mvp-candidates`).subscribe({
       next: (data) => this.allMvpCandidates = data,
       error: () => {
         // FALLBACK: Lista COMPLETA de jugadores de SP Negro y SP Rosa (basado en EquiposComponent)
@@ -249,37 +406,76 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // --- QUINIELA ---
+  // --- QUINIELA ---
   submitQuiniela(q: any) {
     if (!this.isLoggedIn) { alert('Debes iniciar sesión para participar'); return; }
-    if (q.prediction.home === null || q.prediction.visitor === null) return;
+    if (q.prediction.home === null || q.prediction.visitor === null) {
+      alert('Por favor introduce un resultado completo.');
+      return;
+    }
 
-    this.http.post(`${environment.apiUrl}/api/quiniela`, {
+    this.http.post(`${environment.apiUrl}/quiniela`, {
       match_id: q.id,
-      home: q.prediction.home,
-      visitor: q.prediction.visitor
-    }).subscribe({
-      next: () => { q.submitted = true; alert('¡Pronóstico enviado!'); },
-      error: () => alert('Error al enviar pronóstico')
+      home_score: q.prediction.home,
+      visitor_score: q.prediction.visitor
+    }, { headers: this.auth.getAuthHeaders() }).subscribe({
+      next: () => {
+        q.submitted = true;
+        alert('✅ ¡Pronóstico enviado correctamente!');
+        if (this.isAdmin) this.loadAdminVotes();
+      },
+      error: (e) => {
+        // Handle 409 Conflict specifically
+        if (e.status === 409) {
+          q.submitted = true; // Mark as submitted so UI blocks it
+          alert(e.error.message);
+        } else {
+          alert('❌ Error al enviar pronóstico: ' + (e.error?.message || 'Error desconocido'));
+        }
+      }
     });
   }
 
   // --- MVP ---
-  voteMvp() {
+  submitMvp() {
     if (!this.isLoggedIn) { alert('Debes iniciar sesión para votar'); return; }
-    if (!this.selectedMvp) return;
+    if (!this.selectedMvp) { alert('Selecciona un jugador primero.'); return; }
 
-    this.http.post(`${environment.apiUrl}/api/mvp-vote`, { player_name: this.selectedMvp })
+    // Find the match ID for the current team context
+    // We prioritize the OPEN match if exists, or the first one in the list for that team
+    const currentMatch = this.quinielas.find(q => q.team === this.currentTeam && q.isOpen) ||
+      this.quinielas.find(q => q.team === this.currentTeam);
+
+    if (!currentMatch) {
+      alert('⚠️ No se ha encontrado un partido para votar MVP en este equipo.');
+      return;
+    }
+
+    this.http.post(`${environment.apiUrl}/mvp`, {
+      match_id: currentMatch.id,
+      player_name: this.selectedMvp
+    }, { headers: this.auth.getAuthHeaders() })
       .subscribe({
         next: () => {
           this.mvpVoted = true;
-          this.loadMvpResults();
+          this.userMvpVotes.push(currentMatch.id); // Add to local cache
+          alert('✅ ¡Voto MVP registrado!');
+          if (this.isAdmin) this.loadAdminVotes();
         },
-        error: () => alert('Error al votar')
+        error: (e) => {
+          if (e.status === 409) {
+            this.mvpVoted = true;
+            this.userMvpVotes.push(currentMatch.id);
+            alert(e.error.message);
+          } else {
+            alert('❌ Error al votar: ' + (e.error?.message || 'Error desconocido'));
+          }
+        }
       });
   }
 
   loadMvpResults() {
-    this.http.get<any[]>(`${environment.apiUrl}/api/mvp-results`).subscribe(data => this.mvpResults = data);
+    this.http.get<any[]>(`${environment.apiUrl}/mvp-results`).subscribe(data => this.mvpResults = data);
   }
 
   getVotePercentage(playerName: string): number {
@@ -337,7 +533,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.player.dy = 0;
     this.obstacles = [];
     this.scoreRunner = 0;
-    this.gameSpeed = 6;
+    this.gameSpeed = 8; // Faster start
     this.gameRunning = true;
 
     window.addEventListener('keydown', this.handleInput.bind(this));
@@ -363,7 +559,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
   performJump() {
     if (!this.gameRunning) { this.initRunner(); return; }
     if (this.player.grounded) {
-      this.player.dy = -15; // Salto potente
+      this.player.dy = -17; // Higher jump for speed
       this.player.grounded = false;
     }
   }
@@ -379,13 +575,14 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ctx.clearRect(0, 0, W, H);
 
     // Updates
-    this.scoreRunner += 0.1;
-    this.gameSpeed += 0.001;
+    this.scoreRunner += 0.15; // Score faster
+    this.gameSpeed += 0.002;
     this.obstacleTimer++;
 
-    // Spawning (Pipes & Rivals)
-    if (this.obstacleTimer > Math.random() * 80 + 100) {
-      const type = Math.random() > 0.6 ? 'pipe' : 'defender'; // 'pipe' is internal logic for Green Block
+    // Spawning (More frequent but escapable)
+    // Reduce max gap to prevent impossible waits, ensure min gap allows landing
+    if (this.obstacleTimer > Math.random() * 50 + 40) {
+      const type = Math.random() > 0.6 ? 'pipe' : 'defender';
       const width = type === 'pipe' ? 50 : 45;
       const height = type === 'pipe' ? (Math.random() * 50 + 40) : 45;
 
@@ -394,7 +591,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Physics
-    this.player.dy += 0.7; // Gravity
+    this.player.dy += 0.9; // Stronger gravity for snappy jumps
     this.player.y += this.player.dy;
 
     // Suelo colisión
@@ -404,9 +601,9 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
       this.player.grounded = true;
     }
 
-    // Drawing Elements
+    // Drawing Elements... (omitted for brevity, matched by context)
 
-    // 1. Sky (Noche Premium)
+    // 1. Sky...
     var grd = this.ctx.createLinearGradient(0, 0, 0, H);
     grd.addColorStop(0, "#0f0c29");
     grd.addColorStop(1, "#302b63");
@@ -418,12 +615,12 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
     if (Math.random() > 0.9) this.ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
 
     // 3. Floor (Bricked)
-    this.ctx.fillStyle = '#5c3d2e'; // Tierra
+    this.ctx.fillStyle = '#5c3d2e';
     this.ctx.fillRect(0, FloorY, W, H - FloorY);
-    this.ctx.fillStyle = '#65C256'; // Hierba
+    this.ctx.fillStyle = '#65C256';
     this.ctx.fillRect(0, FloorY, W, 10);
 
-    // 4. Player (Team Logo or Pink Box)
+    // 4. Player...
     try {
       this.ctx.drawImage(this.playerImg, this.player.x, this.player.y, this.player.width, this.player.height);
     } catch (e) {
@@ -437,35 +634,28 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
       obs.x -= this.gameSpeed;
 
       if ((obs.type as any) === 'pipe') {
-        // Dibujar Tubería estilo Mario (Verde)
-        this.ctx.fillStyle = '#228B22'; // ForestGreen
+        this.ctx.fillStyle = '#228B22';
         this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
         this.ctx.strokeStyle = '#006400';
         this.ctx.lineWidth = 3;
         this.ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
-        // Cabeza tubería visual
         this.ctx.fillRect(obs.x - 5, obs.y, obs.width + 10, 20);
       } else {
-        // Enigo (Rival Logo)
-        // Pick random logo based on position to simulate variety
         const rivalIdx = Math.floor(obs.x / 200) % this.rivalLogos.length;
         const img = this.rivalLogos[Math.abs(rivalIdx)] || this.rivalLogos[0];
-
         try {
           if (img && img.complete) {
             this.ctx.drawImage(img, obs.x, obs.y, obs.width, obs.height);
-          } else {
-            throw new Error('Image not loaded');
-          }
+          } else { throw new Error(); }
         } catch {
           this.ctx.fillStyle = 'red';
           this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
         }
       }
 
-      // Collision
-      if (this.player.x < obs.x + obs.width - 5 && this.player.x + this.player.width > obs.x + 5 &&
-        this.player.y < obs.y + obs.height - 5 && this.player.height + this.player.y > obs.y) {
+      // Collision (More Forgiving: +10 margin)
+      if (this.player.x < obs.x + obs.width - 10 && this.player.x + this.player.width > obs.x + 10 &&
+        this.player.y < obs.y + obs.height - 10 && this.player.height + this.player.y > obs.y + 10) {
         this.gameOver();
       }
 
@@ -502,7 +692,7 @@ export class FanZoneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   saveScore(game: string, score: number) {
     if (this.isLoggedIn) {
-      this.http.post(`${environment.apiUrl}/api/scores`, { game, score }).subscribe();
+      this.http.post(`${environment.apiUrl}/api/scores`, { game, score }, { headers: this.auth.getAuthHeaders() }).subscribe();
     }
   }
 }

@@ -13,3 +13,9 @@ error.log
 *.db
 *.db-journal
 dev.db
+
+# Zips and Cache
+*.zip
+backend/cache/
+*.log
+

@@ -1,0 +1,100 @@
+[
+  {
+    "url": "https://www.fecanbaloncesto.com/wp-json/wp/v2/",
+    "method": "GET",
+    "headers": {
+      "referer": "https://www.fecanbaloncesto.com/equipo/?id=4046",
+      "x-requested-with": "XMLHttpRequest",
+      "accept-language": "es-ES,es;q=0.9",
+      "accept": "application/json, text/javascript, */*; q=0.01",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://esb.optimalwayconsulting.com/fecan/1/GhDqDyahm2TBntKn3JNdpxBppRS5zVeI/FCBQWeb/getTeamCard/4046",
+    "method": "GET",
+    "headers": {
+      "expires": "0",
+      "cache-control": "no-cache, no-store, must-revalidate",
+      "referer": "https://www.fecanbaloncesto.com/",
+      "accept-language": "es-ES,es;q=0.9",
+      "accept": "application/json, text/plain, */*",
+      "pragma": "no-cache",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "origin": "https://www.fecanbaloncesto.com"
+    }
+  },
+  {
+    "url": "https://maps.googleapis.com/maps/api/mapsjs/gen_204?csp_test=true",
+    "method": "GET",
+    "headers": {
+      "accept-language": "es-ES,es;q=0.9",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "referer": "https://www.google.com/",
+      "accept": "*/*",
+      "origin": "https://www.google.com"
+    }
+  },
+  {
+    "url": "https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/GetViewportInfo",
+    "method": "POST",
+    "headers": {
+      "x-goog-maps-api-signature": "90122",
+      "x-user-agent": "grpc-web-javascript/0.1",
+      "referer": "https://www.google.com/",
+      "x-goog-gmp-client-signals": "CAkqCDMuNjMuMTRkWg4SDAjB44/MBhCA9um8AQ==",
+      "accept-language": "es-ES,es;q=0.9",
+      "x-goog-maps-client-id": "google-maps-embed",
+      "x-goog-maps-api-salt": "bWu583dus",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "content-type": "application/json+protobuf",
+      "x-goog-maps-session-id": "C28F9494-C0F9-4476-90CD-A3844B030E64",
+      "accept": "*/*",
+      "origin": "https://www.google.com"
+    },
+    "postData": "[[[40.540465478515415,-3.9205256517768077],[40.57078890546279,-3.8442279968769597]],15,null,\"en\",0,\"m@765000000\",0,0,null,null,289,1,\"https://www.google.com/maps/embed\",1,null,null,\"36CBA0FD-F9C3-4F08-B1E1-E099DAB630BD\"]"
+  },
+  {
+    "url": "https://www.google.com/maps/vt?pb=!1m4!1m3!1i15!2i16029!3i12338!1m4!1m3!1i15!2i16029!3i12339!1m4!1m3!1i15!2i16030!3i12338!1m4!1m3!1i15!2i16030!3i12339!1m4!1m3!1i15!2i16031!3i12338!1m4!1m3!1i15!2i16031!3i12339!2m3!1e0!2sm!3i765528974!2m3!1e2!2scategorical-search-results-injection!5i1!3m13!2sen!3sUS!5e289!12m5!1e68!2m2!1sset!2sRoadmap!4e2!12m3!1e37!2m1!1ssmartmaps!4e3!12m1!5b1!27m43!299174093m42!2snull%2Cnull!5m8!1m2!1y955369527909873731!2y4278103957860251724!2s%2Fg%2F11wg947y4q!4m2!1x404083533!2x4257824808!15sgcid%3Ababysitter!5m7!1m2!1y955059128869986373!2y5081214244884724834!2s%2Fg%2F1tjrr849!4m2!1x407036130!2x4254194467!5m8!1m2!1y955371027415167789!2y9201812349238240110!2s%2Fg%2F11qt43fsk2!4m2!1x404505292!2x4258051308!15sgcid%3Asoftware_company!5m8!1m2!1y955371705274466857!2y5312040452167173886!2s%2Fg%2F11n5tbn52f!4m2!1x404767085!2x4258088116!15sgcid%3Arestaurant!6e3!8e1!13m2!1m0!2f0.1432382017374039!17b1&client=google-maps-embed&token=40580",
+    "method": "GET",
+    "headers": {
+      "accept-language": "es-ES,es;q=0.9",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "referer": "https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1snull,null!6i15!3m1!1sen!5m1!1sen",
+      "accept": "*/*"
+    }
+  },
+  {
+    "url": "https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/GetViewportInfo",
+    "method": "POST",
+    "headers": {
+      "x-goog-maps-api-signature": "90122",
+      "x-user-agent": "grpc-web-javascript/0.1",
+      "referer": "https://www.google.com/",
+      "x-goog-gmp-client-signals": "CAkqCDMuNjMuMTRkWg0SCwjC44/MBhDAwcAU",
+      "accept-language": "es-ES,es;q=0.9",
+      "x-goog-maps-client-id": "google-maps-embed",
+      "x-goog-maps-api-salt": "bWu583dus",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "content-type": "application/json+protobuf",
+      "x-goog-maps-session-id": "C28F9494-C0F9-4476-90CD-A3844B030E64",
+      "accept": "*/*",
+      "origin": "https://www.google.com"
+    },
+    "postData": "[[[40.54079153643222,-3.902422891905468],[40.57151927573857,-3.862774196026317]],12,null,\"en\",2,null,0,0,null,null,289,1,\"https://www.google.com/maps/embed\",1]"
+  },
+  {
+    "url": "https://esb.optimalwayconsulting.com/fecan/1/GhDqDyahm2TBntKn3JNdpxBppRS5zVeI/Match/getByTeamAndMonth/4046/2",
+    "method": "GET",
+    "headers": {
+      "expires": "0",
+      "cache-control": "no-cache, no-store, must-revalidate",
+      "referer": "https://www.fecanbaloncesto.com/",
+      "accept-language": "es-ES,es;q=0.9",
+      "accept": "application/json, text/plain, */*",
+      "pragma": "no-cache",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "origin": "https://www.fecanbaloncesto.com"
+    }
+  }
+]

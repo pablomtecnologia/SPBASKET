@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SP BASKET DATA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --brand-rosa: #ec4899;
+            --brand-black: #1f2937;
+            --bg: #f8fafc;
+            --card-bg: white;
+            --win: #10b981;
+            --lose: #ef4444;
+            --stats-color: #f59e0b;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--brand-black);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        h1 span {
+            color: var(--brand-rosa);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            padding: 12px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn:hover {
+            border-color: var(--brand-rosa);
+            color: var(--brand-rosa);
+            transform: translateY(-2px);
+        }
+
+        /* LAYOUT */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media(min-width: 900px) {
+            .grid {
+                grid-template-columns: 1.8fr 1fr;
+            }
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--brand-black);
+            text-transform: uppercase;
+        }
+
+        /* NEXT MATCH HERO */
+        .hero-match {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-match::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--brand-rosa), #e11d48);
+        }
+
+        .hero-label {
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero-teams {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 25px;
+        }
+
+        .hero-team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 120px;
+        }
+
+        .hero-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+        }
+
+        .hero-name {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .hero-vs {
+            font-size: 2rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .hero-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* MATCH CARD (Played) */
+        .match-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .match-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: #cbd5e1;
+        }
+
+        .match-card.won::before {
+            background: var(--win);
+        }
+
+        .match-card.lost::before {
+            background: var(--lose);
+        }
+
+        .match-meta-top {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .match-teams {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+        }
+
+        .team-logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .team-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            max-width: 100px;
+        }
+
+        .score-val {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--brand-black);
+        }
+
+        .result-badge {
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .badge-win {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-loss {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .card-footer {
+            text-align: center;
+        }
+
+        .stats-btn {
+            background: #fff7ed;
+            color: #c2410c;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #fdba74;
+            transition: 0.2s;
+        }
+
+        .stats-btn:hover {
+            background: #ffedd5;
+            transform: scale(1.05);
+        }
+
+        /* TABLE */
+        .table-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            text-align: center;
+            padding: 12px 6px;
+            color: #64748b;
+            font-size: 0.7rem;
+            border-bottom: 2px solid #f1f5f9;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        td {
+            text-align: center;
+            padding: 10px 6px;
+            border-bottom: 1px solid #f8fafc;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .pos-circle {
+            width: 24px;
+            height: 24px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        .top-3 {
+            background: var(--brand-rosa);
+            color: white;
+        }
+
+        .team-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .team-cell img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: contain;
+        }
+
+        /* UTILS */
+        .hidden {
+            display: none !important;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f1f5f9;
+            border-top-color: var(--brand-rosa);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 0.8s infinite linear;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .cache-info {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>SP BASKET <span>DATA</span></h1>
+        <div class="controls">
+            <button class="btn" onclick="init('sp-rosa')">SP ROSA</button>
+            <button class="btn" onclick="init('sp-negro')">SP NEGRO</button>
+        </div>
+    </div>
+
+    <div id="loading" class="hidden">
+        <div class="spinner"></div>
+        <p style="color:#64748b; font-weight:600">Sincronizando datos...</p>
+    </div>
+
+    <div id="content" class="grid hidden">
+        <div>
+            <!-- PRÓXIMO PARTIDO -->
+            <div id="upcoming-container"></div>
+
+            <!-- RESULTADOS -->
+            <div class="section-header"><span class="section-title">Últimos Resultados</span></div>
+            <div id="matches-list"></div>
+        </div>
+
+        <div>
+            <div class="section-header"><span class="section-title">Clasificación</span></div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="10%">#</th>
+                            <th width="50%" style="text-align:left">EQUIPO</th>
+                            <th width="10%">J</th>
+                            <th width="10%">V</th>
+                            <th width="10%">D</th>
+                            <th width="10%">PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standings-body"></tbody>
+                </table>
+            </div>
+            <div id="cache-msg" class="cache-info"></div>
+            <div style="text-align:center; margin-top:10px;">
+                <button onclick="forceRefresh()"
+                    style="border:none; background:none; color:#cbd5e1; cursor:pointer; font-size:0.7rem;">Forzar
+                    actualización manual</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_LOGO = 'https://cdn-icons-png.flaticon.com/512/451/451761.png';
+        let currentTeam = 'sp-rosa';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar por defecto SP ROSA al abrir
+            init('sp-rosa');
+        });
+
+        async function init(team) {
+            currentTeam = team;
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('content').classList.add('hidden');
+
+            try {
+                // Llamada normal (usa caché si existe)
+                const res = await fetch(`http://localhost:3001/api/scrape-live/${team}`);
+                const data = await res.json();
+                renderData(data, team);
+            } catch (e) {
+                alert('Error cargando datos: ' + e.message);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+            }
+        }
+
+        async function forceRefresh() {
+            if (!confirm('¿Seguro? Esto tardará unos segundos en conectar con FECAN.')) return;
+            document.getElementById('loading').classList.remove('hidden');
+            try {
+                const res = await fetch(`http://localhost:3001/api/scrape-live/${currentTeam}?force=true`);
+                const data = await res.json();
+                renderData(data, currentTeam);
+            } catch (e) { alert(e); }
+            finally { document.getElementById('loading').classList.add('hidden'); }
+        }
+
+        function renderData(data, myTeamId) {
+            // 1. Clasificación
+            if (data.clasificacion) {
+                document.getElementById('standings-body').innerHTML = data.clasificacion.map((t, i) => `
+                    <tr>
+                        <td><div class="pos-circle ${i < 4 ? 'top-3' : ''}">${t.position}</div></td>
+                        <td class="team-cell">
+                            ${t.logo ? `<img src="${t.logo}">` : ''}
+                            <span>${t.team_name}</span>
+                        </td>
+                        <td>${t.played}</td>
+                        <td style="color:var(--win)">${t.won}</td>
+                        <td style="color:var(--lose)">${t.lost}</td>
+                        <td>${t.points}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // 2. Partidos
+            if (data.partidos) {
+                // Separar Played vs Upcoming
+                const played = data.partidos.filter(m => m.estado === 'played');
+                const upcoming = data.partidos.filter(m => m.estado !== 'played');
+
+                // Ordenar: Jugados (Más recientes primero), Upcoming (Más cercanos primero)
+                // FECAN ya suele darlo ordenado, pero por si acaso.
+
+                // RENDER UPCOMING (El primero destacado)
+                const nextMatch = upcoming[0];
+                const heroContainer = document.getElementById('upcoming-container');
+
+                if (nextMatch) {
+                    heroContainer.innerHTML = `
+                        <div class="hero-match">
+                            <div class="hero-label">PRÓXIMO ENCUENTRO</div>
+                            <div class="hero-teams">
+                                <div class="hero-team">
+                                    <img src="${nextMatch.logo_local || DEFAULT_LOGO}" class="hero-logo" onerror="this.src='${DEFAULT_LOGO}'">
+                                    <span class="hero-name">${nextMatch.equipo_local}</span>
+                                </div>
+                                <div class="hero-vs">VS</div>
+                                <div class="hero-team">
+                                    <img src="${nextMatch.logo_visitante || DEFAULT_LOGO}" class="hero-logo" onerror="this.src='${DEFAULT_LOGO}'">
+                                    <span class="hero-name">${nextMatch.equipo_visitante}</span>
+                                </div>
+                            </div>
+                            <div class="hero-info">
+                                <span><i class="far fa-calendar-alt"></i> ${nextMatch.fecha}</span>
+                                <span><i class="far fa-clock"></i> ${nextMatch.hora || 'Sin hora'}</span>
+                                <span><i class="fas fa-map-marker-alt"></i> ${nextMatch.pabellon || 'Pabellón por definir'}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    heroContainer.innerHTML = '';
+                }
+
+                // RENDER PLAYED
+                const keywords = myTeamId.includes('rosa') ? ['ROSA'] : ['NEGRO'];
+                document.getElementById('matches-list').innerHTML = played.map(m => {
+                    const s1 = m.resultado_local;
+                    const s2 = m.resultado_visitante;
+
+                    const isLoc = keywords.some(k => m.equipo_local.toUpperCase().includes(k)) || m.equipo_local.includes('SP');
+                    const isVis = keywords.some(k => m.equipo_visitante.toUpperCase().includes(k)) || m.equipo_visitante.includes('SP');
+
+                    let weWon = false;
+                    if (isLoc) weWon = s1 > s2;
+                    else if (isVis) weWon = s2 > s1;
+
+                    const resultClass = weWon ? 'won' : 'lost';
+                    const statsUrl = m.stats_url || (m.has_stats ? 'https://www.fecanbaloncesto.com' : null);
+
+                    return `
+                    <div class="match-card ${resultClass}">
+                        <div class="match-meta-top">
+                            <span>${m.fecha}</span>
+                            <span>${m.pabellon || ''}</span>
+                        </div>
+                        <div class="match-teams">
+                            <div class="team">
+                                <img src="${m.logo_local || DEFAULT_LOGO}" class="team-logo" onerror="this.src='${DEFAULT_LOGO}'">
+                                <span class="team-name">${m.equipo_local}</span>
+                            </div>
+                            <div class="team" style="gap:0">
+                                <div class="score-val">${s1} - ${s2}</div>
+                                ${weWon ? '<span class="result-badge badge-win">VICTORIA</span>' : '<span class="result-badge badge-loss">DERROTA</span>'}
+                            </div>
+                            <div class="team">
+                                <img src="${m.logo_visitante || DEFAULT_LOGO}" class="team-logo" onerror="this.src='${DEFAULT_LOGO}'">
+                                <span class="team-name">${m.equipo_visitante}</span>
+                            </div>
+                        </div>
+                        ${m.has_stats ? `<div class="card-footer"><a href="${statsUrl}" target="_blank" class="stats-btn">📊 ESTADÍSTICAS</a></div>` : ''}
+                    </div>`;
+                }).join('');
+            }
+
+            // Msg
+            const msgEl = document.getElementById('cache-msg');
+            if (data.isCached) {
+                const date = new Date(data.lastUpdate);
+                msgEl.innerText = `Datos actualizados: ${date.toLocaleString()} (Caché)`;
+            } else {
+                msgEl.innerText = 'Datos actualizados ahora mismo (En vivo)';
+            }
+        }
+    </script>
+</body>
+
+</html>

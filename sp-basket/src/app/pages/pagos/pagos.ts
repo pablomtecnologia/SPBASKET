@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { FormsModule } from '@angular/forms';
 import { interval, Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-pagos',
@@ -70,7 +71,7 @@ export class PagosComponent implements OnInit, OnDestroy {
 
     const headers = this.auth.getAuthHeaders();
     // Añadimos timestamp para evitar caché del navegador
-    const url = `http://localhost:3001/api/papeletas?t=${new Date().getTime()}`;
+    const url = `${environment.apiUrl}/papeletas?t=${new Date().getTime()}`;
 
     this.http.get<any[]>(url, { headers }).subscribe({
       next: (data) => {
@@ -128,7 +129,7 @@ export class PagosComponent implements OnInit, OnDestroy {
       'Bypass-Tunnel-Reminder': 'true'
     });
 
-    this.http.post('http://localhost:3001/api/papeletas/upload', formData, { headers })
+    this.http.post(`${environment.apiUrl}/papeletas/upload`, formData, { headers })
       .subscribe({
         next: () => {
           this.papeletaUploaded = true;
@@ -189,7 +190,7 @@ export class PagosComponent implements OnInit, OnDestroy {
     this.loading = true;
     const headers = this.auth.getAuthHeaders();
 
-    this.http.post<any>('http://localhost:3001/api/create-checkout-session', {
+    this.http.post<any>(`${environment.apiUrl}/create-checkout-session`, {
       items,
       successUrl: window.location.origin + '/pagos?status=success',
       cancelUrl: window.location.origin + '/pagos?status=cancel'

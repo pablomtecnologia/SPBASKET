@@ -75,12 +75,38 @@
 
 /* Cabecera del Dropdown */
 .dropdown-header {
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: white;
-    padding: 15px 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.header-actions {
+    margin-left: auto;
+    margin-right: 15px;
+}
+
+.btn-stats-link {
+    background: #eb3489;
+    color: white;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(235, 52, 137, 0.3);
+}
+
+.btn-stats-link:hover {
+    transform: scale(1.1);
+    background: #c7206e;
+    box-shadow: 0 6px 15px rgba(235, 52, 137, 0.4);
 }
 
 .dropdown-header h3 {

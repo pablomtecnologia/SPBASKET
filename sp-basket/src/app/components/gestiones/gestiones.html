@@ -14,6 +14,12 @@
     <div class="gestiones-dropdown" *ngIf="showDropdown" (click)="$event.stopPropagation()">
         <div class="dropdown-header">
             <h3>{{ isAdmin() ? 'Centro de Control' : 'Mis Notificaciones' }}</h3>
+            <div class="header-actions" *ngIf="isAdmin()">
+                <button class="btn-stats-link" routerLink="/admin-stats" (click)="toggleDropdown()"
+                    title="Ver Estadísticas Reales">
+                    <i class="fas fa-chart-line"></i>
+                </button>
+            </div>
             <button class="close-btn" (click)="toggleDropdown()">×</button>
         </div>
 
@@ -28,6 +34,10 @@
             <button class="tab-link" [class.active]="viewMode === 'papeletas'" (click)="switchTab('papeletas')">
                 Papeletas
                 <span class="tab-badge" *ngIf="papeletasPendientes.length">{{papeletasPendientes.length}}</span>
+            </button>
+            <button class="tab-link" [class.active]="viewMode === 'pedidos'" (click)="switchTab('pedidos')">
+                {{ isAdmin() ? '🛒 Pedidos' : '🛒 Mis Pedidos' }}
+                <span class="tab-badge" *ngIf="pedidosPendientes.length">{{pedidosPendientes.length}}</span>
             </button>
         </div>
 
@@ -106,6 +116,31 @@
                             style="margin-top:5px; background:#667eea; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
                             💳 PAGAR
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LISTA PEDIDOS (Admin only) -->
+            <div *ngIf="viewMode === 'pedidos'">
+                <div *ngIf="pedidosPendientes.length > 0" style="padding: 8px 20px; text-align: right;">
+                    <button (click)="marcarTodasLeidas()"
+                        style="background:none; border:1px solid #3498db; color:#3498db; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600;">
+                        ✅ Marcar todas como leídas
+                    </button>
+                </div>
+                <div *ngIf="pedidosPendientes.length === 0" class="empty-message">
+                    Sin pedidos nuevos
+                </div>
+                <div class="gestion-item" *ngFor="let notif of pedidosPendientes">
+                    <div class="item-info">
+                        <strong>🛒 {{ notif.title }}</strong>
+                        <span style="font-size: 11px; color:#666;">{{ notif.message }}</span>
+                        <span style="font-size: 10px; color:#aaa;">{{ notif.created_at | date:'dd/MM/yyyy HH:mm'
+                            }}</span>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-approve" (click)="marcarNotificacionLeida(notif)"
+                            title="Marcar como leída">✓</button>
                     </div>
                 </div>
             </div>

@@ -1,10 +1,6 @@
 <div class="contacto-page">
-    <section class="page-header">
-        <div class="container">
-            <h1 class="fade-in">Contacto</h1>
-            <p class="fade-in">¿Tienes alguna pregunta? Estamos aquí para ayudarte</p>
-        </div>
-    </section>
+    <app-page-header title="CONTACTO" subtitle="¿Tienes alguna pregunta? Estamos aquí para ayudarte">
+    </app-page-header>
 
     <section class="section">
         <div class="container">
@@ -37,12 +33,16 @@
                                 required placeholder="Escribe tu mensaje aquí..."></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" [disabled]="!contactForm.valid">
-                            Enviar Mensaje
+                        <button type="submit" class="btn btn-primary" [disabled]="!contactForm.valid || isLoading">
+                            {{ isLoading ? 'Enviando...' : 'Enviar Mensaje' }}
                         </button>
 
                         <div class="success-message" *ngIf="submitted">
                             ¡Mensaje enviado correctamente! Te responderemos pronto.
+                        </div>
+
+                        <div class="error-message" *ngIf="errorMessage" style="color: red; margin-top: 10px;">
+                            {{ errorMessage }}
                         </div>
                     </form>
                 </div>
@@ -60,7 +60,7 @@
                         </div>
                         <div class="info-content">
                             <h4>Email</h4>
-                            <p>cb.spbasket&#64;gmail.com</p>
+                            <p>comunicacion&#64;saskipenguins.com</p>
                         </div>
                     </div>
 

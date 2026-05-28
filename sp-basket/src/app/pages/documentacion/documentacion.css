@@ -1,6 +1,6 @@
 .documentacion-page {
     min-height: 100vh;
-    background-image: url('../../../assets/images/bg-docs.jpg');
+    background-image: url('/assets/images/bg-docs.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -542,4 +542,129 @@
     .cta-content {
         flex-direction: column;
     }
+}
+
+/* ADMIN PANEL STYLES */
+.admin-panel {
+    background: #fff;
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--primary-pink);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.btn-add {
+    background: var(--text-dark);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-add:hover {
+    transform: scale(1.05);
+}
+
+.add-doc-form {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.form-input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-save {
+    background: var(--primary-pink);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* DYNAMIC CARDS */
+.doc-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.doc-card.inactive {
+    opacity: 0.6;
+    background: #f0f0f0;
+}
+
+/* Admin Controls Overlay */
+.admin-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.btn-icon:hover {
+    background: #eee;
+}
+
+.btn-delete:hover {
+    background: #ffebee;
+}
+
+/* Status Badges */
+.status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #333;
+    color: white;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.coming-soon-badge {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
 }

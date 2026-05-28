@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageHeaderComponent } from '../../components/page-header/page-header';
 
 @Component({
   selector: 'app-galeria',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderComponent],
   templateUrl: './galeria.html',
   styleUrls: ['./galeria.css']
 })
@@ -14,10 +15,10 @@ export class GaleriaComponent implements OnInit {
 
   album = {
     id: 1,
-    title: 'Colección Completa 2024-2025',
+    title: 'Colección Completa 2025-2026',
     description: 'Accede a todas las fotos de la temporada alojadas en nuestra nube.',
     date: 'Temporada Actual',
-    coverImage: '/assets/images/bg-galeria.jpg', // Usamos la imagen de fondo asegurada
+    coverImage: '/assets/images/bg-galeria.jpg',
     photoCount: 'Ver Fotos'
   };
 

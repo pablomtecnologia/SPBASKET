@@ -1,0 +1,120 @@
+/* Visit Counters - MINI Y DISCRETOS */
+.visit-counters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    z-index: 1000;
+    padding: 0;
+}
+
+.counter-card {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(230, 0, 126, 0.4);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    min-width: 100px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.counter-card:hover {
+    transform: translateX(-4px);
+    background: rgba(230, 0, 126, 0.2);
+    border-color: var(--primary-pink);
+}
+
+.counter-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-pink-light));
+    border-radius: 50%;
+    color: var(--white);
+    box-shadow: 0 2px 6px rgba(230, 0, 126, 0.3);
+}
+
+.counter-icon.active {
+    background: linear-gradient(135deg, #00d4aa, #00ffc4);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 2px 6px rgba(0, 212, 170, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 3px 10px rgba(0, 255, 196, 0.5);
+    }
+}
+
+.counter-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.counter-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.counter-number {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    line-height: 1;
+}
+
+.counter-label {
+    font-size: 0.55rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+@media (max-width: 768px) {
+    .visit-counters {
+        bottom: 10px;
+        right: 10px;
+        gap: 0.3rem;
+    }
+
+    .counter-card {
+        min-width: 90px;
+        padding: 0.35rem 0.6rem;
+    }
+
+    .counter-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .counter-icon svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .counter-number {
+        font-size: 0.85rem;
+    }
+
+    .counter-label {
+        font-size: 0.5rem;
+    }
+}

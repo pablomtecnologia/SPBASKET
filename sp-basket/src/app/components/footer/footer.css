@@ -196,6 +196,32 @@
     padding: var(--spacing-md) var(--spacing-lg);
 }
 
+.footer-bottom-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.visit-counter {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--primary-pink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(235, 52, 137, 0.3);
+    margin: 0 !important;
+    /* Override p margin */
+}
+
+.visit-counter strong {
+    color: white;
+}
+
 .footer-bottom p {
     margin: 0;
     text-align: center;
@@ -266,5 +292,12 @@
 
     .logo-name {
         font-size: 1.3rem;
+    }
+
+    .footer-bottom-content {
+        justify-content: center;
+        flex-direction: column-reverse;
+        /* Copyright last */
+        gap: 10px;
     }
 }

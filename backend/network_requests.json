@@ -1,0 +1,38 @@
+[
+  {
+    "url": "https://www.fecanbaloncesto.com/wp-json/wp/v2/",
+    "method": "GET",
+    "headers": {
+      "referer": "https://www.fecanbaloncesto.com/equipo/?id=4046",
+      "x-requested-with": "XMLHttpRequest",
+      "accept-language": "es-ES,es;q=0.9",
+      "accept": "application/json, text/javascript, */*; q=0.01",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://esb.optimalwayconsulting.com/fecan/1/GhDqDyahm2TBntKn3JNdpxBppRS5zVeI/FCBQWeb/getTeamCard/4046",
+    "method": "GET",
+    "headers": {
+      "expires": "0",
+      "cache-control": "no-cache, no-store, must-revalidate",
+      "referer": "https://www.fecanbaloncesto.com/",
+      "accept-language": "es-ES,es;q=0.9",
+      "accept": "application/json, text/plain, */*",
+      "pragma": "no-cache",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "origin": "https://www.fecanbaloncesto.com"
+    }
+  },
+  {
+    "url": "https://maps.googleapis.com/maps/api/mapsjs/gen_204?csp_test=true",
+    "method": "GET",
+    "headers": {
+      "accept-language": "es-ES,es;q=0.9",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      "referer": "https://www.google.com/",
+      "accept": "*/*",
+      "origin": "https://www.google.com"
+    }
+  }
+]

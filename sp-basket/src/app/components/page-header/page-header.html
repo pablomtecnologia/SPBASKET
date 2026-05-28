@@ -1,0 +1,7 @@
+<section class="page-header" [style.background-image]="backgroundImage ? 'url(' + backgroundImage + ')' : ''">
+    <div class="header-overlay"></div>
+    <div class="header-content">
+        <h1 class="fade-in">{{ title }}</h1>
+        <p class="fade-in" *ngIf="subtitle">{{ subtitle }}</p>
+    </div>
+</section>

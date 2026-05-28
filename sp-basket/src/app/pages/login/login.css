@@ -4,7 +4,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url('../../../assets/images/bg-login.jpg');
+    background-image: url('/assets/images/bg-login.jpg');
     background-size: cover;
     background-position: center;
     position: relative;

@@ -1,138 +1,117 @@
-<div class="productos-page">
-    <!-- Hero Section con Countdown -->
-    <!-- Video Hero Section -->
-    <section class="video-hero">
-        <div class="video-overlay"></div>
-        <video autoplay muted loop playsinline class="video-bg">
-            <source src="/assets/videos/promo-camiseta.mp4" type="video/mp4">
-            <!-- Fallback para demo si no está el video local -->
-            <source
-                src="https://assets.mixkit.co/videos/preview/mixkit-basketball-player-dribbling-in-a-court-43896-large.mp4"
-                type="video/mp4">
-        </video>
+<div class="shop-container">
+    <div class="shop-header">
+        <h1>Tienda Oficial</h1>
+        <p>Viste los colores de la pasión. Calidad premium para nuestros fans.</p>
+    </div>
 
-        <div class="hero-content fade-in">
-            <span class="badge-new">NUEVO LANZAMIENTO 2026</span>
-            <h1 class="mega-title">LA NUEVA PIEL</h1>
-            <p class="hero-subtitle">Edición Especial Pioneers Basket Cup</p>
-
-            <div class="hero-actions">
-                <button class="btn-mega-reserve" (click)="reserveProduct()">
-                    <span class="icon">🛒</span> RESERVAR CAMISETA
-                </button>
-                <button class="btn-watch-video" (click)="scrollToPreview()">
-                    VER MÁS PRODUCTOS
-                </button>
+    <div class="products-grid">
+        <div class="product-card" *ngFor="let p of products">
+            <div class="image-container">
+                <!-- Show first image -->
+                <img [src]="p.images[0]" [alt]="p.name" class="product-image">
             </div>
 
-            <!-- Countdown Timer Integrated -->
-            <div class="countdown-container glass-effect">
-                <div class="countdown-item">
-                    <div class="countdown-number">{{ countdown.days }}</div>
-                    <div class="countdown-label">Días</div>
+            <div class="product-info">
+                <h3>{{ p.name }}</h3>
+                <span class="price">{{ p.price }}€</span>
+                <p class="description">{{ p.description }}</p>
+
+                <div class="size-selector" *ngIf="p.sizes.length > 1">
+                    <label>Talla</label>
+                    <div class="sizes">
+                        <button *ngFor="let s of p.sizes" (click)="selectSize(p.id, s)"
+                            [class.active]="selectedSize[p.id] === s">
+                            {{ s }}
+                        </button>
+                    </div>
                 </div>
-                <div class="countdown-divider">:</div>
-                <div class="countdown-item">
-                    <div class="countdown-number">{{ countdown.hours }}</div>
-                    <div class="countdown-label">Horas</div>
+
+                <!-- Customization -->
+                <div class="customization-options mb-3" *ngIf="p.allowNumber || p.allowName">
+
+                    <div class="custom-field mt-2" *ngIf="p.allowNumber">
+                        <label>Dorsal / Número</label>
+                        <select [(ngModel)]="customNumbers[p.id]">
+                            <option value="" disabled selected>-- Elige --</option>
+                            <option *ngFor="let n of availableNumbers" [value]="n">{{ n }}</option>
+                        </select>
+                    </div>
+
+                    <div class="custom-field mt-3" *ngIf="p.allowName">
+                        <label>Nombre (Dorsal)</label>
+                        <input type="text" [(ngModel)]="customNames[p.id]" placeholder="TU NOMBRE">
+                    </div>
                 </div>
-                <div class="countdown-divider">:</div>
-                <div class="countdown-item">
-                    <div class="countdown-number">{{ countdown.minutes }}</div>
-                    <div class="countdown-label">Minutos</div>
-                </div>
-                <div class="countdown-divider">:</div>
-                <div class="countdown-item">
-                    <div class="countdown-number">{{ countdown.seconds }}</div>
-                    <div class="countdown-label">Segundos</div>
-                </div>
+
+                <button class="add-btn" (click)="addToCart(p)">
+                    AÑADIR AL CARRITO
+                </button>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Product Preview Gallery -->
-    <section class="preview-section section">
-        <div class="container">
-            <h2 class="section-title">👀 Adelanto de Productos</h2>
-            <p class="section-subtitle">Esto es solo una muestra de lo que estamos preparando</p>
+    <!-- FLOATING CART BUTTON -->
+    <button class="cart-float-btn" (click)="openCart()" *ngIf="cart.length > 0">
+        🛒 VER PEDIDO ({{ cart.length }})
+    </button>
 
-            <div class="preview-gallery">
-                <div *ngFor="let preview of productPreviews" class="preview-card slide-in">
-                    <div class="preview-image">
-                        <img [src]="preview.image" [alt]="preview.name">
-                        <div class="preview-overlay">
-                            <span class="preview-badge">{{ preview.status }}</span>
+    <!-- CART MODAL -->
+    <div class="modal-overlay" *ngIf="isCartOpen" (click)="closeCart()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <button class="close-modal" (click)="closeCart()">×</button>
+            <h2>TU RESERVA</h2>
+
+            <div class="cart-items" *ngIf="cart.length > 0; else emptyCart">
+                <div class="cart-item" *ngFor="let item of cart; let i = index">
+                    <div class="item-details">
+                        <strong>{{ item.product.name }}</strong>
+                        <div class="item-meta">
+                            Talla: {{ item.size }} | Cant: {{ item.quantity }}
+                            <div *ngIf="item.customNumber" class="text-warning small">#{{ item.customNumber }}</div>
+                            <div *ngIf="item.customName" class="text-info small">{{ item.customName }}</div>
                         </div>
                     </div>
-                    <div class="preview-info">
-                        <h3>{{ preview.name }}</h3>
-                        <p>{{ preview.description }}</p>
-                        <div class="preview-price">
-                            <span class="price-estimate">{{ preview.price }}</span>
-                        </div>
-                    </div>
+                    <div class="item-price">{{ item.product.price * item.quantity }}€</div>
+                    <button class="remove-btn" (click)="removeFromCart(i)">🗑️</button>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Newsletter Section -->
-    <section class="newsletter-section section">
-        <div class="container">
-            <div class="newsletter-card">
-                <div class="newsletter-icon">📬</div>
-                <h2>¡Sé el Primero en Saberlo!</h2>
-                <p>Suscríbete y te avisaremos en cuanto lancemos la tienda oficial</p>
+                <div class="cart-total">
+                    TOTAL ESTIMADO: <span>{{ getTotal() }}€</span>
+                </div>
 
-                <form class="newsletter-form" (ngSubmit)="subscribeNewsletter()" *ngIf="!subscribed">
+                <div class="checkout-form">
+                    <h3>Datos de Contacto</h3>
+                    <p class="form-hint">Te contactaremos para confirmar el pago y la entrega.</p>
+
                     <div class="form-group">
-                        <input type="text" class="form-input" [(ngModel)]="subscriberName" name="name"
-                            placeholder="Tu nombre" required>
+                        <label>Nombre Completo *</label>
+                        <input type="text" [(ngModel)]="customerName" placeholder="Tu nombre">
                     </div>
+
                     <div class="form-group">
-                        <input type="email" class="form-input" [(ngModel)]="subscriberEmail" name="email"
-                            placeholder="tu@email.com" required>
+                        <label>Teléfono (WhatsApp) *</label>
+                        <input type="tel" [(ngModel)]="customerPhone" placeholder="600 000 000">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg" [disabled]="isSubscribing">
-                        <span *ngIf="!isSubscribing">✨ Suscribirme</span>
-                        <span *ngIf="isSubscribing" class="spinner"></span>
+
+                    <div class="form-group">
+                        <label>Mensaje Opcional</label>
+                        <textarea [(ngModel)]="customerMessage"
+                            placeholder="Ej: Quiero recogerlo en el entrenamiento..."></textarea>
+                    </div>
+
+                    <button class="confirm-btn" (click)="submitReservation()" [disabled]="loading">
+                        {{ loading ? 'ENVIANDO...' : 'CONFIRMAR RESERVA' }}
                     </button>
-                </form>
-
-                <div *ngIf="subscribed" class="success-message fade-in">
-                    ✅ ¡Gracias! Te avisaremos del lanzamiento.
                 </div>
+
             </div>
-        </div>
-    </section>
 
-    <!-- Features Section -->
-    <section class="features-section section">
-        <div class="container">
-            <h2 class="section-title">✨ ¿Por qué esperar nuestros productos?</h2>
+            <ng-template #emptyCart>
+                <p class="empty-msg">Tu carrito está vacío.</p>
+                <button class="continue-btn" (click)="closeCart()">VOLVER A LA TIENDA</button>
+            </ng-template>
 
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🏀</div>
-                    <h3>Diseño Oficial</h3>
-                    <p>Todos nuestros productos llevan los diseños oficiales del club</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⭐</div>
-                    <h3>Calidad Premium</h3>
-                    <p>Materiales de primera calidad que duran temporadas</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💗</div>
-                    <h3>Apoya al Equipo</h3>
-                    <p>Parte de los beneficios van directamente al club</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🚚</div>
-                    <h3>Envío Rápido</h3>
-                    <p>Entregas en 24-48h en toda España</p>
-                </div>
-            </div>
         </div>
-    </section>
+    </div>
+
 </div>

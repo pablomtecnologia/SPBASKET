@@ -31,6 +31,98 @@
                 </div>
             </div>
 
+            <!-- ADMIN CONTROL PANEL -->
+            <div *ngIf="isAdmin" class="admin-controls-panel fade-in-up">
+                <span class="panel-label">🛠️ Panel Administrador</span>
+
+                <!-- SP ROSA CONTROLS -->
+                <div class="team-controls-group">
+                    <h4 class="team-label">SP ROSA</h4>
+                    <div class="toggle-switch-btn" [class.active]="settings.quiniela_rosa_open"
+                        (click)="toggleSetting('quiniela_rosa_open')">
+                        <div class="status-dot"></div>
+                        <span>Quiniela Rosa</span>
+                    </div>
+
+                    <div class="toggle-switch-btn" [class.active]="settings.mvp_rosa_open"
+                        (click)="toggleSetting('mvp_rosa_open')">
+                        <div class="status-dot"></div>
+                        <span>MVP Rosa</span>
+                    </div>
+                </div>
+
+                <!-- SP NEGRO CONTROLS -->
+                <div class="team-controls-group">
+                    <h4 class="team-label">SP NEGRO</h4>
+                    <div class="toggle-switch-btn" [class.active]="settings.quiniela_negro_open"
+                        (click)="toggleSetting('quiniela_negro_open')">
+                        <div class="status-dot"></div>
+                        <span>Quiniela Negro</span>
+                    </div>
+
+                    <div class="toggle-switch-btn" [class.active]="settings.mvp_negro_open"
+                        (click)="toggleSetting('mvp_negro_open')">
+                        <div class="status-dot"></div>
+                        <span>MVP Negro</span>
+                    </div>
+                </div>
+
+                <!-- ADMIN VOTES TABLE -->
+                <div class="mt-4 pt-4 border-top border-secondary">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="text-warning mb-0">📊 Registro de Votaciones</h4>
+                        <button class="btn btn-sm btn-outline-light" (click)="loadAdminVotes()">
+                            🔄 Actualizar Tabla
+                        </button>
+                    </div>
+
+                    <div class="table-responsive rounded-3 shadow-lg border border-dark" style="background: #1c1c1c;">
+                        <table class="table table-dark table-hover table-sm mb-0 align-middle">
+                            <thead class="text-white text-uppercase small"
+                                style="background: #252525; letter-spacing: 1px;">
+                                <tr>
+                                    <th class="py-3 ps-4" style="color: #ccc;">Usuario</th>
+                                    <th class="py-3" style="color: #ccc;">Tipo</th>
+                                    <th class="py-3" style="color: #ccc;">Partido</th>
+                                    <th class="py-3 pe-4 text-end" style="color: #ccc;">Voto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- QUINIELAS -->
+                                <tr *ngFor="let v of adminVotes?.quinielas" style="border-bottom: 1px solid #333;">
+                                    <td class="ps-4 fw-bold text-info">{{ v.nombre_completo }}</td>
+                                    <td><span
+                                            class="badge bg-primary bg-opacity-25 text-primary border border-primary">QUINIELA</span>
+                                    </td>
+                                    <td class="small text-muted">{{ v.home_team }} vs {{ v.visitor_team }}</td>
+                                    <td class="pe-4 text-end fw-bold font-monospace text-white fs-6">
+                                        {{ v.home_score }} - {{ v.visitor_score }}
+                                    </td>
+                                </tr>
+
+                                <!-- MVP VOTES -->
+                                <tr *ngFor="let v of adminVotes?.mvp_votes" style="border-bottom: 1px solid #333;">
+                                    <td class="ps-4 fw-bold text-info">{{ v.nombre_completo }}</td>
+                                    <td><span
+                                            class="badge bg-warning bg-opacity-25 text-warning border border-warning">MVP</span>
+                                    </td>
+                                    <td class="small text-muted">{{ v.home_team }} vs {{ v.visitor_team }}</td>
+                                    <td class="pe-4 text-end text-warning fw-bold">
+                                        {{ v.voted_value }}
+                                    </td>
+                                </tr>
+
+                                <tr *ngIf="(!adminVotes?.quinielas?.length && !adminVotes?.mvp_votes?.length)">
+                                    <td colspan="4" class="text-center py-5 text-muted fst-italic">
+                                        No hay votos registrados todavía.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- LAYOUT GRID -->
             <div class="dashboard-grid">
 
@@ -58,8 +150,10 @@
                     </div>
                 </div>
 
-                <!-- 2. QUINIELA SEMANAL (Filtered by Team) -->
-                <div class="card-widget quiniela-widget">
+                <!-- 2. QUINIELA SEMANAL (Featured Large) -->
+                <!-- Only visible if team-specific quiniela is OPEN -->
+                <div *ngIf="(currentTeam === 'rosa' && settings.quiniela_rosa_open === true) || (currentTeam === 'negro' && settings.quiniela_negro_open === true)"
+                    class="card-widget quiniela-widget span-col-2">
                     <div class="widget-header">
                         <span class="widget-icon">📝</span>
                         <h3>La Quiniela {{ currentTeam | titlecase }}</h3>
@@ -67,73 +161,112 @@
                     <div class="widget-body">
                         <ng-container *ngFor="let q of quinielas">
                             <div *ngIf="q.team === currentTeam" class="quiniela-match-block mb-4 fade-in">
-                                <p class="text-muted mb-1" style="font-size: 0.9rem;">
-                                    <strong>{{q.competition}}</strong> <br> {{q.date}}
+                                <p class="text-center text-uppercase font-weight-bold mb-4"
+                                    style="font-size: 1.2rem; letter-spacing: 2px;">
+                                    {{q.competition}} <br> <span class="text-primary">{{q.date}}</span>
                                 </p>
                                 <div class="match-prediction">
                                     <div class="team">
                                         <img [src]="q.logoHome" alt="Home" class="mini-logo">
                                         <span>{{q.home}}</span>
-                                        <input type="number" [(ngModel)]="q.prediction.home" [disabled]="q.submitted"
+                                    </div>
+
+                                    <div class="score-input-group d-flex align-items-center gap-3">
+                                        <input type="number" [(ngModel)]="q.prediction.home"
+                                            [disabled]="q.submitted || (q.isOpen === false && !isAdmin)"
+                                            class="score-input">
+                                        <span class="vs mx-3">VS</span>
+                                        <input type="number" [(ngModel)]="q.prediction.visitor"
+                                            [disabled]="q.submitted || (q.isOpen === false && !isAdmin)"
                                             class="score-input">
                                     </div>
-                                    <span class="vs">VS</span>
+
                                     <div class="team">
                                         <img [src]="q.logoVisitor" alt="Visitor" class="mini-logo">
                                         <span>{{q.visitor}}</span>
-                                        <input type="number" [(ngModel)]="q.prediction.visitor" [disabled]="q.submitted"
-                                            class="score-input">
                                     </div>
                                 </div>
-                                <button *ngIf="!q.submitted" class="btn btn-outline-primary btn-block mt-2"
-                                    (click)="submitQuiniela(q)">Enviar Pronóstico</button>
-                                <div *ngIf="q.submitted" class="success-msg mt-2 fade-in">
-                                    ✅ ¡Pronóstico guardado!
+
+                                <div class="text-center mt-4">
+                                    <button *ngIf="!q.submitted && (q.isOpen || isAdmin)"
+                                        class="btn btn-primary btn-lg px-5" (click)="submitQuiniela(q)">
+                                        ENVIAR PRONÓSTICO
+                                    </button>
+                                    <div *ngIf="!q.submitted && !q.isOpen && !isAdmin"
+                                        class="text-danger font-weight-bold">
+                                        ⏳ Tiempo agotado para pronósticos
+                                    </div>
+                                    <div *ngIf="q.submitted" class="success-msg mt-2 fade-in p-3"
+                                        style="background: rgba(46, 204, 113, 0.2); border-radius: 10px;">
+                                        ✅ ¡Pronóstico guardado con éxito!
+                                    </div>
                                 </div>
                             </div>
                         </ng-container>
-                        <div *ngIf="!currentQuiniela" class="text-center text-muted">
+                        <div *ngIf="!currentQuiniela" class="text-center text-muted p-5">
                             No hay partido disponible para esta semana.
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. MVP POLL (Filtered by Team) -->
-                <div class="card-widget poll-widget">
+                <!-- 3. MVP POLL (Grid Layout) -->
+                <div class="card-widget poll-widget span-col-2">
                     <div class="widget-header">
                         <span class="widget-icon">⭐</span>
                         <h3>MVP {{ currentTeam | titlecase }}</h3>
+                        <span *ngIf="!settings.mvp_voting_open" class="badge bg-danger ml-2">CERRADO</span>
                     </div>
+
                     <div class="widget-body">
-                        <div *ngIf="!mvpVoted">
-                            <p class="mb-3">¿Quién fue el mejor de {{ currentTeam === 'rosa' ? 'SP Rosa' : 'SP Negro'
-                                }}?</p>
-                            <div class="poll-options">
-                                <label *ngFor="let player of filteredMvpCandidates" class="poll-option fade-in">
-                                    <input type="radio" name="mvp" [value]="player.name" [(ngModel)]="selectedMvp">
-                                    <img [src]="player.avatar" class="poll-avatar">
-                                    <div class="poll-info">
-                                        <span class="poll-name">{{ player.name }}</span>
-                                        <span class="poll-team">{{ player.team }}</span>
-                                    </div>
-                                </label>
-                            </div>
-                            <div *ngIf="filteredMvpCandidates.length === 0" class="text-center">Cargando candidatos...
-                            </div>
-                            <button class="btn btn-primary btn-sm mt-3" (click)="voteMvp()"
-                                [disabled]="!selectedMvp">Votar MVP</button>
+                        <!-- CLOSED MESSAGE -->
+                        <div *ngIf="(currentTeam === 'rosa' && settings.mvp_rosa_open !== true) || (currentTeam === 'negro' && settings.mvp_negro_open !== true)"
+                            class="text-center p-5">
+                            <h3 class="text-muted">Las votaciones están cerradas.</h3>
+                            <p>Solo se puede votar el día de partido.</p>
                         </div>
 
-                        <div *ngIf="mvpVoted" class="poll-results fade-in">
-                            <h4>Resultados:</h4>
-                            <div class="result-bar-container" *ngFor="let p of mvpResults">
-                                <span class="label">{{ p.player_name }}</span>
-                                <div class="progress">
-                                    <div class="bar" [style.width.%]="getVotePercentage(p.player_name)"></div>
+                        <!-- VOTING OPEN -->
+                        <div
+                            *ngIf="(currentTeam === 'rosa' && settings.mvp_rosa_open === true) || (currentTeam === 'negro' && settings.mvp_negro_open === true)">
+                            <div *ngIf="!mvpVoted">
+                                <p class="mb-3 text-center">Selecciona al mejor jugador del partido:</p>
+
+                                <div class="poll-options-grid">
+                                    <label *ngFor="let player of filteredMvpCandidates" class="mvp-card-label fade-in">
+                                        <input type="radio" name="mvp" [value]="player.name" [(ngModel)]="selectedMvp">
+                                        <div class="mvp-card">
+                                            <i class="fas fa-check-circle check-icon"></i>
+                                            <img [src]="player.avatar" class="mvp-avatar-large">
+                                            <span class="mvp-name">{{ player.name }}</span>
+                                            <span class="mvp-team">#{{ player.id }}</span>
+                                        </div>
+                                    </label>
                                 </div>
-                                <small>{{ getVotePercentage(p.player_name) | number:'1.0-0' }}%</small>
+
+                                <div *ngIf="filteredMvpCandidates.length === 0" class="text-center p-4">Cargando
+                                    candidatos...</div>
+
+                                <div class="text-center mt-4">
+                                    <button class="btn btn-primary btn-lg px-5 popup-btn" (click)="submitMvp()"
+                                        [disabled]="!selectedMvp">
+                                        VOTAR MVP
+                                    </button>
+                                </div>
                             </div>
-                            <p class="text-muted mt-2 text-small">Gracias por tu voto.</p>
+
+                            <div *ngIf="mvpVoted" class="poll-results fade-in p-3">
+                                <h4 class="text-center mb-4">📊 Resultados en tiempo real</h4>
+                                <div class="result-bar-container" *ngFor="let p of mvpResults">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="label font-weight-bold">{{ p.player_name }}</span>
+                                        <small>{{ getVotePercentage(p.player_name) | number:'1.0-0' }}%</small>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="bar" [style.width.%]="getVotePercentage(p.player_name)"></div>
+                                    </div>
+                                </div>
+                                <p class="text-muted mt-4 text-center">Gracias por participar.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

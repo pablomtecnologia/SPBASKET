@@ -1,7 +1,7 @@
 .contacto-page {
     width: 100%;
     min-height: 100vh;
-    background-image: url('../../../assets/images/contacto-bg.jpg');
+    background-image: url('/assets/images/comp-rosa.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -15,31 +15,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.85);
     z-index: 0;
 }
 
-.page-header {
-    padding: var(--spacing-xxl) 0;
-    text-align: center;
-    background: transparent;
-    position: relative;
-    z-index: 1;
-    margin-bottom: var(--spacing-xl);
-}
-
-.page-header h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: var(--spacing-sm);
-    color: var(--primary-pink);
-}
-
-.page-header p {
-    font-size: 1.2rem;
-    color: var(--text-dark);
-    font-weight: 500;
-}
+/* Removed custom .page-header CSS - using PageHeaderComponent */
 
 .contact-layout,
 .map-section {

@@ -3,7 +3,7 @@ import { HomeComponent } from './pages/home/home';
 import { EquiposComponent } from './pages/equipos/equipos';
 import { EquipoDetalleComponent } from './pages/equipo-detalle/equipo-detalle';
 import { CompeticionesComponent } from './pages/competiciones/competiciones';
-import { CompeticionDetalleComponent } from './pages/competicion-detalle/competicion-detalle';
+import { CompetitionDetailComponent } from './pages/competicion-detalle/competicion-detalle';
 import { NoticiasComponent } from './pages/noticias/noticias';
 import { NoticiaDetalleComponent } from './pages/noticia-detalle/noticia-detalle';
 import { DocumentacionComponent } from './pages/documentacion/documentacion';
@@ -17,16 +17,22 @@ import { ResetPasswordComponent } from './pages/reset-password/reset-password';
 import { PerfilComponent } from './pages/perfil/perfil';
 import { MedicalRecognitionComponent } from './pages/medical-recognition/medical-recognition';
 import { authGuard } from './guards/auth-guard';
+import { adminGuard } from './guards/admin-guard';
 import { PioneersComponent } from './pages/pioneers/pioneers';
 import { PagosComponent } from './pages/pagos/pagos';
 import { HistorialComponent } from './pages/historial/historial';
+import { AdminCompeticionesComponent } from './pages/admin-competiciones/admin-competiciones';
+import { AdminStatsComponent } from './pages/admin-stats/admin-stats';
+// import { AdminFecanImportComponent } from './pages/admin-fecan-import/admin-fecan-import';
 
 import { FanZoneComponent } from './pages/fan-zone/fan-zone';
+import { HighlightsComponent } from './pages/highlights/highlights';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
+  { path: 'highlights', component: HighlightsComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'fan-zone', component: FanZoneComponent }, // Nueva ruta ZONA FAN
+  { path: 'fan-zone', component: FanZoneComponent, canActivate: [authGuard] }, // Nueva ruta ZONA FAN
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
@@ -34,7 +40,7 @@ export const routes: Routes = [
   { path: 'equipos', component: EquiposComponent },
   { path: 'equipos/:id', component: EquipoDetalleComponent },
   { path: 'competiciones', component: CompeticionesComponent },
-  { path: 'competiciones/:id', component: CompeticionDetalleComponent },
+  { path: 'competiciones/:id', component: CompetitionDetailComponent },
   { path: 'noticias', component: NoticiasComponent },
   { path: 'noticias/:id', component: NoticiaDetalleComponent },
   {
@@ -59,7 +65,10 @@ export const routes: Routes = [
     component: HistorialComponent,
     canActivate: [authGuard]
   },
-  { path: 'pagos', component: PagosComponent, canActivate: [authGuard] },
+  { path: 'pagos', component: PagosComponent, canActivate: [adminGuard] },
+  { path: 'admin-competiciones', component: AdminCompeticionesComponent, canActivate: [adminGuard] },
+  { path: 'admin-stats', component: AdminStatsComponent, canActivate: [adminGuard] },
+  // { path: 'admin-fecan-import', component: AdminFecanImportComponent, canActivate: [adminGuard] },
   { path: 'productos', component: ProductosComponent },
   { path: '**', redirectTo: '' }
 ];

@@ -1,11 +1,13 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 interface Noticia {
     id: number;
     titulo: string;
+    subtitulo?: string;
     contenido: string;
     imagen_url?: string;
     enlace?: string;
@@ -19,7 +21,7 @@ interface Noticia {
 @Component({
     selector: 'app-noticia-detalle',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterLink],
     templateUrl: './noticia-detalle.html',
     styleUrls: ['./noticia-detalle.css']
 })
@@ -27,6 +29,7 @@ export class NoticiaDetalleComponent implements OnInit {
     noticia: Noticia | null = null;
     loading = true;
     errorMessage = '';
+    apiUrl = environment.apiUrl;
 
     constructor(
         private route: ActivatedRoute,
@@ -36,26 +39,31 @@ export class NoticiaDetalleComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        console.log('🔍 NoticiaDetalleComponent iniciado');
         const id = this.route.snapshot.paramMap.get('id');
-        console.log('📝 ID obtenido de la ruta:', id);
         if (id) {
             this.cargarNoticia(parseInt(id));
-        } else {
-            console.error('❌ No se encontró ID en la ruta');
         }
     }
 
     cargarNoticia(id: number) {
-        console.log('📡 Cargando noticia con ID:', id);
         this.loading = true;
-        this.http.get<Noticia>(`http://localhost:3001/api/noticias/${id}`).subscribe({
+        this.http.get<any>(`${this.apiUrl}/noticias/${id}`).subscribe({
             next: (data) => {
-                console.log('✅ Noticia recibida:', data);
-                this.noticia = data;
+                // MAP BACKEND FIELDS TO FRONTEND
+                this.noticia = {
+                    id: data.id,
+                    titulo: data.title,
+                    subtitulo: data.subtitle,
+                    contenido: data.content,
+                    imagen_url: data.image_url,
+                    fecha_creacion: data.date,
+                    destacada: data.is_featured,
+                    categoria: data.category,
+                    autor: data.author,
+                    hashtags: data.tags
+                };
                 this.loading = false;
-                this.cdr.detectChanges(); // Forzar actualización de la vista
-                console.log('✅ Estado actualizado, loading:', this.loading);
+                this.cdr.detectChanges();
             },
             error: (err) => {
                 console.error('❌ Error cargando noticia:', err);
@@ -76,13 +84,13 @@ export class NoticiaDetalleComponent implements OnInit {
     }
 
     formatDate(dateString: string): string {
+        if (!dateString) return '';
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
         return date.toLocaleDateString('es-ES', {
             day: 'numeric',
             month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric'
         });
     }
 }

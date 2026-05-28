@@ -1,0 +1,380 @@
+<div class="admin-stats-page">
+    <app-page-header title="CENTRO DE CONTROL GRÁFICO"
+        subtitle="Análisis visual avanzado en tiempo real"></app-page-header>
+
+    <div class="container main-content">
+
+        <div *ngIf="loading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Calculando métricas y generando gráficos...</p>
+        </div>
+
+        <div *ngIf="error" class="error-state">
+            <p>{{ error }}</p>
+        </div>
+
+        <div *ngIf="!loading && !error && stats" class="dashboard">
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab" [class.active]="activeTab === 'overview'" (click)="changeTab('overview')">
+                    📊 Vista General
+                </button>
+                <button class="tab" [class.active]="activeTab === 'traffic'" (click)="changeTab('traffic')">
+                    📈 Tráfico
+                </button>
+                <button class="tab" [class.active]="activeTab === 'users'" (click)="changeTab('users')">
+                    👥 Usuarios
+                </button>
+                <button class="tab" [class.active]="activeTab === 'content'" (click)="changeTab('content')">
+                    📄 Contenido
+                </button>
+                <button class="tab" [class.active]="activeTab === 'devices'" (click)="changeTab('devices')">
+                    📱 Dispositivos
+                </button>
+                <button class="tab" [class.active]="activeTab === 'payments'" (click)="changeTab('payments')">
+                    💰 Pagos
+                </button>
+                <button class="tab" [class.active]="activeTab === 'shop'" (click)="changeTab('shop')">
+                    🛍️ Tienda
+                </button>
+            </div>
+
+            <!-- OVERVIEW TAB -->
+            <div *ngIf="activeTab === 'overview'" class="tab-content fade-in">
+                <!-- Top Metrics Row -->
+                <div class="metrics-grid">
+                    <div class="metric-card highlight">
+                        <div class="icon">👥</div>
+                        <div class="info">
+                            <span class="label">Activos Ahora</span>
+                            <h2>{{ stats.traffic?.activeNow || 0 }}</h2>
+                            <span class="sub">En los últimos 5 min</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="icon">📊</div>
+                        <div class="info">
+                            <span class="label">Sesiones Totales</span>
+                            <h2>{{ stats.traffic?.totalSessions || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="icon">👀</div>
+                        <div class="info">
+                            <span class="label">Vistas de Página</span>
+                            <h2>{{ stats.traffic?.totalPageViews || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="icon">⏱️</div>
+                        <div class="info">
+                            <span class="label">Duración Media</span>
+                            <h2>{{ formatDuration(stats.traffic?.avgDuration) }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>📈 Tendencia de Visitas (14 Días)</h3>
+                        <canvas id="dailyVisitsChart"></canvas> <!-- LINE CHART -->
+                    </div>
+                    <div class="chart-container">
+                        <h3>⏰ Horas Punta (Hoy)</h3>
+                        <canvas id="hourlyVisitsChart"></canvas> <!-- BAR CHART -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRAFFIC TAB -->
+            <div *ngIf="activeTab === 'traffic'" class="tab-content fade-in">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="label">Páginas/Sesión</span>
+                        <h2>{{ stats.traffic?.pagesPerSession || 0 }}</h2>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">Activos Hoy</span>
+                        <h2>{{ stats.traffic?.activeToday || 0 }}</h2>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Visitas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let v of stats.traffic?.dailyVisits">
+                                <td>{{ v.date | date:'dd/MM/yyyy' }}</td>
+                                <td><strong>{{ v.count }}</strong></td>
+                            </tr>
+                            <tr *ngIf="!stats.traffic?.dailyVisits?.length">
+                                <td colspan="2" class="empty">Sin datos</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div *ngIf="activeTab === 'users'" class="tab-content fade-in">
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>👥 Distribución de Roles</h3>
+                        <canvas id="userRolesChart"></canvas> <!-- PIE CHART -->
+                    </div>
+                    <div class="metrics-column">
+                        <div class="metric-card highlight">
+                            <div class="info">
+                                <span class="label">Total Registrados</span>
+                                <h2>{{ stats.users?.totalRegistered || 0 }}</h2>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="info">
+                                <span class="label">Nuevos Hoy</span>
+                                <h2>{{ stats.users?.newToday || 0 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Rol</th>
+                                <th>Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let r of stats.users?.byRole">
+                                <td><span class="badge">{{ r.rol }}</span></td>
+                                <td><strong>{{ r.count }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CONTENT TAB -->
+            <div *ngIf="activeTab === 'content'" class="tab-content fade-in">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="label">Total Noticias</span>
+                        <h2>{{ stats.content?.totalNews || 0 }}</h2>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">Noticias/Mes</span>
+                        <h2>{{ stats.content?.newsThisMonth || 0 }}</h2>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-container full-width">
+                        <h3>🏆 Top 5 Páginas Más Populares</h3>
+                        <canvas id="topPagesChart"></canvas> <!-- HORIZONTAL BAR CHART -->
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Página</th>
+                                <th>Visitas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let p of stats.content?.topPages">
+                                <td><code>{{ p.page_path }}</code></td>
+                                <td><strong>{{ p.views }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DEVICES TAB -->
+            <div *ngIf="activeTab === 'devices'" class="tab-content fade-in">
+                <div class="charts-row">
+                    <div class="chart-container center">
+                        <h3>📱 Tipos de Dispositivo</h3>
+                        <canvas id="devicesChart"></canvas> <!-- DOUGHNUT CHART -->
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Sesiones</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let d of stats.devices?.byType">
+                                <td><span class="badge">{{ d.device_type }}</span></td>
+                                <td><strong>{{ d.count }}</strong></td>
+                                <td>{{ getPercentage(d.count, stats.devices?.uniqueSessions) }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAYMENTS TAB -->
+            <div *ngIf="activeTab === 'payments'" class="tab-content fade-in">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="icon">🎫</div>
+                        <div class="info">
+                            <span class="label">Total Papeletas</span>
+                            <h2>{{ stats.payments?.totalTickets || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="icon">✅</div>
+                        <div class="info">
+                            <span class="label">Pagadas</span>
+                            <h2>{{ stats.payments?.paidTickets || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="icon">⏳</div>
+                        <div class="info">
+                            <span class="label">Pendientes</span>
+                            <h2>{{ stats.payments?.pendingTickets || 0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">📊 Sistema</div>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <tbody>
+                            <tr>
+                                <td><strong>Uptime del Sistema</strong></td>
+                                <td>{{ formatUptime(stats.system?.uptimeSeconds) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Eventos Registrados</strong></td>
+                                <td>{{ stats.system?.totalEvents || 0 }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SHOP TAB -->
+            <div *ngIf="activeTab === 'shop'" class="tab-content fade-in">
+                <div class="metrics-grid">
+                    <div class="metric-card highlight">
+                        <div class="icon">🛒</div>
+                        <div class="info">
+                            <span class="label">Productos Vendidos</span>
+                            <h2>{{ stats.shop?.totalProductsSold || 0 }}</h2>
+                            <span class="sub">Unidades totales</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="icon">📦</div>
+                        <div class="info">
+                            <span class="label">Pedidos Realizados</span>
+                            <h2>{{ stats.shop?.totalOrders || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="icon">⏳</div>
+                        <div class="info">
+                            <span class="label">Pendientes de Aprobación</span>
+                            <h2>{{ stats.shop?.pendingOrders || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="icon">✅</div>
+                        <div class="info">
+                            <span class="label">Aprobados</span>
+                            <h2>{{ stats.shop?.approvedOrders || 0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="icon">🏁</div>
+                        <div class="info">
+                            <span class="label">Completados</span>
+                            <h2>{{ stats.shop?.completedOrders || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="icon">❌</div>
+                        <div class="info">
+                            <span class="label">Rechazados</span>
+                            <h2>{{ stats.shop?.rejectedOrders || 0 }}</h2>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="icon">📊</div>
+                        <div class="info">
+                            <span class="label">Tasa de Aprobación</span>
+                            <h2>{{ getOrderApprovalRate() }}%</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">📋 Últimos Pedidos</div>
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#ID</th>
+                                <th>Cliente</th>
+                                <th>Artículos</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let order of stats.shop?.recentOrders">
+                                <td><strong>#{{ order.id }}</strong></td>
+                                <td>{{ order.name || 'Sin nombre' }}</td>
+                                <td>{{ order.itemCount }} uds.</td>
+                                <td>
+                                    <span class="order-status" [ngClass]="'status-' + order.status">
+                                        {{ getOrderStatusLabel(order.status) }}
+                                    </span>
+                                </td>
+                                <td>{{ order.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                                <td class="actions-cell">
+                                    <button *ngIf="order.status === 'pending'" class="btn-action approve"
+                                        (click)="updateOrderStatus(order.id, 'approved')"
+                                        title="Aprobar Pedido">✓</button>
+                                    <button *ngIf="order.status === 'pending'" class="btn-action reject"
+                                        (click)="updateOrderStatus(order.id, 'rejected')"
+                                        title="Rechazar Pedido">✕</button>
+                                    <button *ngIf="order.status === 'approved'" class="btn-action complete"
+                                        (click)="updateOrderStatus(order.id, 'completed')"
+                                        title="Marcar como Completado">🏁</button>
+                                </td>
+                            </tr>
+                            <tr *ngIf="!stats.shop?.recentOrders?.length">
+                                <td colspan="5" class="empty">No hay pedidos aún</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

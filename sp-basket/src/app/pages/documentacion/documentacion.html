@@ -1,10 +1,6 @@
 <div class="documentacion-page">
-    <section class="page-header">
-        <div class="container">
-            <h1 class="fade-in">Documentación</h1>
-            <p class="fade-in">Documentos importantes y recursos para jugadores y familias</p>
-        </div>
-    </section>
+    <app-page-header title="DOCUMENTACIÓN" subtitle="Documentos importantes y recursos para jugadores y familias">
+    </app-page-header>
 
     <!-- ENLACE AL RECONOCIMIENTO MÉDICO -->
     <section class="section medical-link-section">
@@ -31,8 +27,48 @@
     <section class="section">
         <div class="container">
             <h2 class="section-title">Documentos Disponibles</h2>
+
+            <!-- ADMIN PANEL -->
+            <div class="admin-panel" *ngIf="isAdmin">
+                <button class="btn-add" (click)="showForm = !showForm">
+                    {{ showForm ? 'Cancelar' : '➕ Añadir Nuevo Documento' }}
+                </button>
+
+                <div class="add-doc-form" *ngIf="showForm">
+                    <input type="text" [(ngModel)]="newDocTitle" placeholder="Título del documento *"
+                        class="form-input">
+                    <textarea [(ngModel)]="newDocDesc" placeholder="Descripción" class="form-input" rows="2"></textarea>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" [(ngModel)]="newDocComingSoon"> Próximamente (Sin archivo)
+                        </label>
+                        <input type="file" (change)="onFileSelected($event)" *ngIf="!newDocComingSoon">
+                    </div>
+
+                    <button class="btn-save" (click)="createDocument()" [disabled]="isSubmitting">
+                        {{ isSubmitting ? 'Guardando...' : 'Guardar Documento' }}
+                    </button>
+                </div>
+            </div>
+
             <div class="docs-grid">
-                <div class="doc-card" *ngFor="let doc of documents">
+                <div class="doc-card" *ngFor="let doc of visibleDocuments" [class.inactive]="!doc.is_active">
+
+                    <!-- Admin Controls Overlay -->
+                    <div class="admin-controls" *ngIf="isAdmin" (click)="$event.stopPropagation()">
+                        <button class="btn-icon" (click)="toggleStatus(doc, 'is_active'); $event.stopPropagation()"
+                            [title]="doc.is_active ? 'Ocultar' : 'Mostrar'">
+                            {{ doc.is_active ? '👁️' : '🚫' }}
+                        </button>
+                        <button class="btn-icon" (click)="toggleStatus(doc, 'coming_soon'); $event.stopPropagation()"
+                            [title]="doc.coming_soon ? 'Marcar disponible' : 'Marcar próximamente'">
+                            {{ doc.coming_soon ? '⏳' : '✅' }}
+                        </button>
+                        <button class="btn-icon btn-delete" (click)="deleteDocument(doc.id); $event.stopPropagation()"
+                            title="Eliminar">🗑️</button>
+                    </div>
+
                     <div class="doc-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
@@ -41,7 +77,23 @@
                     </div>
                     <h3>{{ doc.title }}</h3>
                     <p>{{ doc.description }}</p>
-                    <a [href]="doc.link" target="_blank" class="btn btn-outline">Descargar</a>
+
+                    <div *ngIf="doc.coming_soon; else downloadLink" class="coming-soon-badge">
+                        PRÓXIMAMENTE
+                    </div>
+                    <ng-template #downloadLink>
+                        <a [href]="doc.file_url" target="_blank" class="btn btn-outline"
+                            *ngIf="doc.file_url">Descargar</a>
+                    </ng-template>
+
+                    <div *ngIf="!doc.is_active && isAdmin" class="status-badge hidden">
+                        OCULTO
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div *ngIf="visibleDocuments.length === 0" class="no-docs">
+                    <p>No hay documentos disponibles en este momento.</p>
                 </div>
             </div>
         </div>

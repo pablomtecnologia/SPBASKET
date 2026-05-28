@@ -1,0 +1,3 @@
+ALTER USER spbasket_user WITH PASSWORD 'PinguinoBasket123!';
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO spbasket_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO spbasket_user;

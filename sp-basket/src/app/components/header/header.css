@@ -41,18 +41,18 @@
 /* Navigation Styles */
 .nav {
     display: flex;
-    gap: 2px;
+    gap: 1px;
     align-items: center;
     flex-wrap: nowrap;
 }
 
 .nav a {
-    padding: 0.35rem 0.45rem;
-    font-size: 0.9rem;
+    padding: 0.35rem 0.35rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-dark);
     text-transform: uppercase;
-    letter-spacing: -0.4px;
+    letter-spacing: -0.5px;
     border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
     position: relative;
@@ -65,12 +65,15 @@
     font-weight: 800 !important;
 }
 
+
 /* ZONA FAN */
 .nav-game {
     color: #9146ff !important;
     /* Twitch purple style */
     font-weight: 800 !important;
 }
+
+/* ADMIN SECTION REMOVED */
 
 .nav a::after {
     content: '';
@@ -106,38 +109,79 @@
 
 /* Mimetized User Actions (Profile, Login, Logout) */
 .btn-profile,
-.btn-login,
-.btn-logout {
+.btn-login {
     display: flex !important;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.4rem 0.5rem !important;
-    font-size: 0.7rem;
+    gap: 0.2rem;
+    padding: 0.35rem 0.4rem !important;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: -0.3px;
-    color: var(--text-dark) !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    letter-spacing: -0.4px;
     border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
     cursor: pointer;
     white-space: nowrap;
 }
 
-.btn-profile svg,
-.btn-login svg,
-.btn-logout svg {
+.btn-profile {
+    color: var(--text-dark) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Login button - más destacado */
+.btn-login {
+    background: linear-gradient(135deg, var(--primary-pink) 0%, #d6006f 100%) !important;
+    color: white !important;
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.7rem !important;
+    font-weight: 800 !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(230, 0, 126, 0.3) !important;
+    margin-left: 0.3rem;
+}
+
+.btn-login:hover {
+    background: linear-gradient(135deg, #d6006f 0%, var(--primary-pink) 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(230, 0, 126, 0.4) !important;
+}
+
+.btn-login svg {
+    stroke: white !important;
+}
+
+/* Botón de login cuando está al inicio (aún más destacado) */
+.btn-login-first {
+    padding: 0.5rem 0.9rem !important;
+    font-size: 0.75rem !important;
+    margin-right: 0.5rem !important;
+    box-shadow: 0 3px 12px rgba(230, 0, 126, 0.4) !important;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 3px 12px rgba(230, 0, 126, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 3px 16px rgba(230, 0, 126, 0.6);
+    }
+}
+
+.btn-profile svg {
     width: 14px;
     height: 14px;
     stroke: var(--text-dark);
     transition: all var(--transition-fast);
 }
 
-.btn-profile:hover,
-.btn-login:hover,
-.btn-logout:hover {
+.btn-profile:hover {
     color: var(--primary-pink) !important;
     background: rgba(230, 0, 126, 0.05) !important;
     transform: translateY(-1px);
@@ -151,18 +195,115 @@
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.btn-profile:hover svg,
-.btn-login:hover svg,
-.btn-logout:hover svg {
+.btn-profile:hover svg {
     stroke: var(--primary-pink);
 }
 
+
 /* Specific styling adjustments if needed */
-.btn-logout {
-    margin-left: 2px;
-    border-left: 1px solid rgba(0, 0, 0, 0.1) !important;
-    border-radius: 0 !important;
-    padding-left: 0.8rem !important;
+/* Specific styling adjustments if needed */
+/* Removed problematic logout button styling */
+
+/* Profile Dropdown Container */
+.profile-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-profile {
+    cursor: pointer;
+}
+
+.profile-dropdown-container .btn-profile {
+    gap: 0.4rem;
+}
+
+.dropdown-arrow {
+    transition: transform var(--transition-fast);
+}
+
+.btn-profile.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xl);
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-normal);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.profile-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex !important;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.2rem !important;
+    width: 100%;
+    text-align: left;
+    color: var(--text-dark) !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none !important;
+}
+
+.dropdown-item:hover {
+    background: rgba(230, 0, 126, 0.05) !important;
+    color: var(--primary-pink) !important;
+    transform: translateX(4px);
+}
+
+.dropdown-item svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--text-dark);
+    transition: stroke var(--transition-fast);
+}
+
+.dropdown-item:hover svg {
+    stroke: var(--primary-pink);
+}
+
+.logout-item {
+    color: #e53935 !important;
+}
+
+.logout-item svg {
+    stroke: #e53935 !important;
+}
+
+.logout-item:hover {
+    background: rgba(229, 57, 53, 0.05) !important;
+    color: #c62828 !important;
+}
+
+.logout-item:hover svg {
+    stroke: #c62828 !important;
 }
 
 /* Mobile Menu Toggle */
@@ -257,8 +398,7 @@
 
     /* Botones de acción en menú móvil */
     .btn-profile,
-    .btn-login,
-    .btn-logout {
+    .btn-login {
         padding: 1.2rem 1.5rem !important;
         font-size: 1rem;
         justify-content: flex-start;
@@ -267,10 +407,25 @@
         width: 100%;
     }
 
-    .btn-logout {
-        margin-left: 0;
-        border-left: none !important;
-        background: #fcfcfc !important;
-        /* Ligeramente diferente */
+    /* Profile dropdown en móvil */
+    .profile-dropdown-container {
+        width: 100%;
+    }
+
+    .profile-dropdown-container .btn-profile {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .profile-dropdown-menu {
+        position: static;
+        box-shadow: none;
+        background: rgba(0, 0, 0, 0.02);
+        margin-top: 0;
+        border-radius: 0;
+    }
+
+    .dropdown-item {
+        padding-left: 2.5rem !important;
     }
 }

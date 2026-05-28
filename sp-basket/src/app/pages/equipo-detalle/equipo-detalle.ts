@@ -21,6 +21,7 @@ interface TeamDetail {
 
 @Component({
   selector: 'app-equipo-detalle',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './equipo-detalle.html',
   styleUrls: ['./equipo-detalle.css']
