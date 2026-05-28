@@ -26,7 +26,7 @@ function Home() {
 
   return (
     <div className="home-container" style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'white', padding: '2rem' }}>
-      <img src="/logo.png" alt="Logo" style={{ height: '120px', marginBottom: '2rem' }} />
+      <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" style={{ height: '120px', marginBottom: '2rem' }} />
       <h1 style={{ color: 'var(--accent)', textAlign: 'center', fontSize: '2.5rem', fontWeight: 900, textTransform: 'uppercase' }}>SPBASKET <span style={{ color: 'white' }}>3×3</span></h1>
       <p style={{ color: 'var(--text2)', marginBottom: '2.5rem', textAlign: 'center', fontSize: '1.2rem' }}>Portal Oficial de Competición</p>
       
@@ -61,7 +61,7 @@ function Home() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/3x3">
       <ErrorBoundary>
         <Suspense fallback={
           <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0e1a', color: 'white' }}>
