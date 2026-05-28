@@ -18,4 +18,6 @@ dev.db
 *.zip
 backend/cache/
 *.log
+DESPLEGAR_DESDE_GITHUB_3X3.bat
+
 
